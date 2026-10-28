@@ -1,0 +1,50 @@
+name: 编译未签名 IPA
+
+# 手动触发为主；推到 main 也自动编一次，方便换 index.html 后直接拿新包。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # 未签名编译：不依赖任何证书 / 描述文件，产出给用户自己签名安装。
+      - name: Build for generic iOS device (no signing)
+        run: |
+          xcodebuild \
+            -project TendiesEditor.xcodeproj \
+            -scheme TendiesEditor \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      # .app -> Payload/*.app -> zip 成 .ipa（这就是未签名 IPA 的标准结构）。
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)
+          echo "APP_PATH=$APP_PATH"
+          test -n "$APP_PATH"
+          test -d "$APP_PATH"
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r TendiesEditor-unsigned.ipa Payload
+          ls -lh TendiesEditor-unsigned.ipa
+          unzip -l TendiesEditor-unsigned.ipa | head -20
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: TendiesEditor-unsigned-ipa
+          path: TendiesEditor-unsigned.ipa
+          if-no-files-found: error
