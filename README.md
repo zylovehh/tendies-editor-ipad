@@ -123,3 +123,11 @@ xcodebuild -project TendiesEditor.xcodeproj -scheme TendiesEditor \
   2. 编辑：拖动、双指捏合、滑杆、三态切换、动画预览都跟手；
   3. 导出分享：点导出能弹出分享单，.tendies 能存到“文件”或隔空投送；
   4. 装机：用 Pocket Poster / Nugget 装锁屏后，解锁上移、三态透明度、循环动画、视差层级都正常。
+
+
+## 原生消息桥 tendiesExport（App 侧已注册，网页侧需真机对齐）
+
+- WebView.swift 在 loadFileURL 之前用 `config.userContentController.add(coordinator, name: "tendiesExport")` 注册了桥，网页侧导出后可分块发 base64 的 .tendies 数据，App 侧按 index 排序、去重、连续性检查、zip 头（PK\x03\x04）校验后存临时目录并弹系统分享单。
+- 假设的字段约定（未与网页侧最新版核对，需真机对齐）：字典 body，type 为 start/chunk/end/error/complete，id/exportId、index、total、isLast/last、filename、data/chunk/base64；start 丢弃旧传输，error 弹中文提示，缺块/解码失败/非 zip 头均报错不分享。
+- 旧的 WKDownloadDelegate 下载拦截保留，两种导出路径都要能走；分享完成后删临时文件。
+- 本机无 Xcode，未在真机验证桥接与 Pocket Poster 导入。
