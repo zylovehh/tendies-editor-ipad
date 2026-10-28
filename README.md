@@ -1,3 +1,18 @@
+# 兼容版说明（本目录为变体，原工程 ~/workspace/ipad-editor-app/ 不动）
+
+本变体只为排除全能签在 iPad 上“签名成功、安装没反应”的常见装机卡点，不改编辑器功能、不改 WebView 逻辑、不改 index.html 内容。
+
+与原工程不同的地方只有：
+- Bundle ID：com.tendies.editor → com.zyl.tendieseditor
+- App 显示名：中文“交互壁纸编辑器” → 英文 TendiesEditor（中文过不了就换英文）
+- Info.plist 显式补齐 MinimumOSVersion 16.0、UIDeviceFamily [2]、UIRequiredDeviceCapabilities [arm64]
+- AppIcon.appiconset 补了一个 1024x1024 纯色占位图（AppIcon-1024.png），未用用户角色图
+- 其余全部不变：仅 iPad、横屏优先、全屏 WKWebView、最低 iPadOS 16、相册权限文案保留中文、工作流沿用原版
+
+未验证：本机无 Xcode，未编过；最终验证靠 GitHub Actions 构建日志和用户在 iPad 上用全能签实测（签名成功后安装、点图标、信任证书三步）。
+
+---
+
 # 交互壁纸编辑器（iPad 版）
 
 所有用户看得见的文案都用中文；代码里的英文标识符、文件名、路径不改。
