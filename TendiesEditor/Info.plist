@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<!-- 只支持 iPad，且全屏（不进 Slide Over / Split View），保证三栏布局不被压窄 -->
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<!-- 横屏优先（放第一位），也允许竖屏；UI 按横屏三栏设计 -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>交互壁纸编辑器</string>
+	<!-- 相册权限：编辑器里“选图”用系统文件选择框打开相册，选背景图和前景图。 -->
+	<!-- iOS 14 起系统选图框本身不强制要这个权限，但 WKWebView 触发选图、以及后续存图时仍以此为准，文案全中文。 -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问相册，以便你在编辑器里选择背景图和前景图，制作交互壁纸。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>需要保存到相册，以便把做好的壁纸图片或导出的文件保存到你的相册里。</string>
+</dict>
+</plist>
