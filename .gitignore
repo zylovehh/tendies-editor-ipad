@@ -1,1 +1,5 @@
-# 初始化 main 分支，稍后将被上传的真实文件替换
+build/
+*.ipa
+DerivedData/
+xcuserdata/
+.DS_Store
