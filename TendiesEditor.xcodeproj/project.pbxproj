@@ -218,7 +218,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tendies.editor;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zyl.tendieseditor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMBED_LIBRARIES_WITH_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -237,7 +237,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tendies.editor;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zyl.tendieseditor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMBED_LIBRARIES_WITH_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
