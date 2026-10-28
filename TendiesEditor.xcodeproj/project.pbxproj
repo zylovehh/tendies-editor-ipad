@@ -12,12 +12,14 @@
 		A1B2C3D4E5F600000000000F /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000009 /* index.html */; };
 		A1B2C3D4E5F6000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000000A /* Assets.xcassets */; };
 		A1B2C3D4E5F6000000000011 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000000C /* WebKit.framework */; };
+		A1B2C3D4E5F6000000000021 /* jszip.min.js in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000022 /* jszip.min.js */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A1B2C3D4E5F6000000000007 /* TendiesEditorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TendiesEditorApp.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000008 /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000009 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000022 /* jszip.min.js */ = {isa = PBXFileReference; lastKnownFileType = text.javascript; path = jszip.min.js; sourceTree = "<group>"; };
 		A1B2C3D4E5F600000000000A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1B2C3D4E5F600000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B2C3D4E5F600000000000C /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
@@ -50,6 +52,7 @@
 				A1B2C3D4E5F6000000000007 /* TendiesEditorApp.swift */,
 				A1B2C3D4E5F6000000000008 /* WebView.swift */,
 				A1B2C3D4E5F6000000000009 /* index.html */,
+				A1B2C3D4E5F6000000000022 /* jszip.min.js */,
 				A1B2C3D4E5F600000000000A /* Assets.xcassets */,
 				A1B2C3D4E5F600000000000B /* Info.plist */,
 			);
@@ -122,6 +125,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D4E5F600000000000F /* index.html in Resources */,
+				A1B2C3D4E5F6000000000021 /* jszip.min.js in Resources */,
 				A1B2C3D4E5F6000000000010 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
