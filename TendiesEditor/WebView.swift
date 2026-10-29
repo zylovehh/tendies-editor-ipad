@@ -44,6 +44,7 @@ struct WebView: UIViewRepresentable {
         // 消息会因为桥还没注册而丢掉。名字必须 exactly 是 tendiesExport，
         // 网页侧按这个名字找，拼写差一个字母网页就会判定桥不存在而走回退路。
         config.userContentController.add(context.coordinator, name: "tendiesExport")
+        config.userContentController.add(context.coordinator, name: "tendiesLocal")
 
         // cap 协议必须在 WKWebView 创建前注册：WKWebView 创建时拷贝配置，
         // 创建后再往 config 里加 handler 对已建好的 webView 不生效，cap:// 请求
@@ -90,6 +91,44 @@ struct WebView: UIViewRepresentable {
         func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
             guard let url = urlSchemeTask.request.url else {
                 urlSchemeTask.didFailWithError(NSError(domain: "cap", code: -1, userInfo: nil))
+                return
+            }
+            // App 本地储存直供图：cap://app/local/<项目号>/<文件路径>
+            // 从 Documents/tendies-local 取文件、按扩展名给正确类型，不走浏览器存储和 blob。
+            if path.hasPrefix("/local/") {
+                let rel = String(path.dropFirst("/local/".count))
+                let parts = rel.split(separator: "/").map { String($0) }
+                if parts.count >= 2 {
+                    let projectId = parts[0]
+                    let fileRel = parts.dropFirst().joined(separator: "/")
+                    let safeProject = projectId.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+                    let safeRel = fileRel.split(separator: "/").filter { $0 != "" && $0 != "." && $0 != ".." }.joined(separator: "/")
+                    if !safeProject.isEmpty && !safeRel.isEmpty,
+                       let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                        let file = docs.appendingPathComponent("tendies-local").appendingPathComponent(safeProject).appendingPathComponent(safeRel)
+                        if let data = try? Data(contentsOf: file) {
+                            let ext = (safeRel as NSString).pathExtension.lowercased()
+                            let mime: String
+                            switch ext {
+                            case "png": mime = "image/png"
+                            case "jpg", "jpeg": mime = "image/jpeg"
+                            case "webp": mime = "image/webp"
+                            case "gif": mime = "image/gif"
+                            case "svg": mime = "image/svg+xml"
+                            case "bmp": mime = "image/bmp"
+                            case "mp4": mime = "video/mp4"
+                            case "mov": mime = "video/quicktime"
+                            default: mime = "application/octet-stream"
+                            }
+                            if let resp = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": mime, "Content-Length": String(data.count)]) {
+                                urlSchemeTask.didReceive(resp); urlSchemeTask.didReceive(data); urlSchemeTask.didFinish(); return
+                            }
+                        }
+                    }
+                }
+                if let resp = HTTPURLResponse(url: url, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) {
+                    urlSchemeTask.didReceive(resp); urlSchemeTask.didFinish()
+                }
                 return
             }
             // Next 客户端路由取 RSC 数据：静态包里只有 demo 页的 RSC。
@@ -210,7 +249,75 @@ struct WebView: UIViewRepresentable {
         ) {
             // 消息回调可能不在主线程，状态读写和弹框统一回主线程，避免竞态。
             DispatchQueue.main.async { [weak self] in
-                self?.handleTendiesExport(message.body)
+                if message.name == "tendiesLocal" {
+                    self?.handleTendiesLocal(message.body, webView: message.webView)
+                } else {
+                    self?.handleTendiesExport(message.body)
+                }
+            }
+        }
+
+        // MARK: - App 本地储存（tendiesLocal）：iPad 老 WebKit 下浏览器存储不可靠时用
+        // 网页侧导入时分块发 base64 到这里，存到 Documents/tendies-local/<项目号>/<路径>；
+        // 画布改从 cap://app/local/... 直接取图，不走 OPFS/IndexedDB/blob。
+        private struct LocalTransfer {
+            var projectId: String
+            var path: String
+            var chunks: [Int: String] = [:]
+        }
+        private var localTransfers: [String: LocalTransfer] = [:]
+        private func localBaseDir() -> URL? {
+            FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("tendies-local")
+        }
+        private func localFileURL(projectId: String, path: String) -> URL? {
+            let safeProject = projectId.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+            let safeRel = path.split(separator: "/").filter { $0 != "" && $0 != "." && $0 != ".." }.joined(separator: "/")
+            guard !safeProject.isEmpty, !safeRel.isEmpty, let base = localBaseDir() else { return nil }
+            return base.appendingPathComponent(safeProject).appendingPathComponent(safeRel)
+        }
+        private func replyLocal(webView: WKWebView?, id: String, ok: Bool) {
+            guard let webView = webView else { return }
+            let safeId = id.replacingOccurrences(of: "'", with: "")
+            webView.evaluateJavaScript("window.__tendiesLocalResolve && window.__tendiesLocalResolve('\(safeId)', \(ok ? "true" : "false"))", completionHandler: nil)
+        }
+        private func handleTendiesLocal(_ body: Any, webView: WKWebView?) {
+            guard let dict = body as? [String: Any],
+                  let id = dict["id"] as? String,
+                  let action = dict["action"] as? String,
+                  let projectId = dict["projectId"] as? String,
+                  let path = dict["path"] as? String else { return }
+            if action == "has" {
+                let exists = localFileURL(projectId: projectId, path: path).map { FileManager.default.fileExists(atPath: $0.path) } ?? false
+                replyLocal(webView: webView, id: id, ok: exists)
+                return
+            }
+            guard action == "saveChunk" else { return }
+            let index = dict["index"] as? Int ?? 0
+            let isLast = dict["isLast"] as? Bool ?? false
+            let chunk = dict["data"] as? String ?? ""
+            var t = localTransfers[id] ?? LocalTransfer(projectId: projectId, path: path)
+            t.chunks[index] = chunk
+            localTransfers[id] = t
+            if !isLast {
+                replyLocal(webView: webView, id: id, ok: true)
+                return
+            }
+            // 最后一块到了，按序号拼包、写文件
+            let keys = t.chunks.keys.sorted()
+            var b64 = ""
+            for k in keys { b64 += t.chunks[k] ?? "" }
+            localTransfers.removeValue(forKey: id)
+            guard let fileURL = localFileURL(projectId: projectId, path: path),
+                  let data = Data(base64Encoded: b64, options: .ignoreUnknownCharacters) else {
+                replyLocal(webView: webView, id: id, ok: false)
+                return
+            }
+            do {
+                try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: fileURL, options: .atomic)
+                replyLocal(webView: webView, id: id, ok: true)
+            } catch {
+                replyLocal(webView: webView, id: id, ok: false)
             }
         }
 
