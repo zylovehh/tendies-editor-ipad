@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>交互壁纸编辑器</title>
+<style>
+*{box-sizing:border-box}
+html,body{height:100dvh;width:100dvw;overflow:hidden;margin:0}
+body{margin:0;font-family:-apple-system,PingFang SC,Microsoft YaHei,sans-serif;background:#111;color:#eee}
+button{cursor:pointer}
+.topbar{height:50px;width:100vw;display:flex;align-items:center;gap:6px;padding:0 10px;background:#1a1a1a;border-bottom:1px solid #333;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+.topbar button{width:auto;margin:0;padding:8px 12px;border:0;border-radius:8px;background:#333;color:#fff;font-size:14px}
+.topbar button.primary{background:#0a84ff}
+.topbar .spacer{flex:1}
+.topbar .proj{font-weight:700}
+.topbar .saved{color:#8f8;font-size:13px;min-width:90px}
+.wrap{display:flex;width:100vw;height:calc(100dvh - 50px);overflow:hidden}
+.leftpanel{flex:0 0 17%;min-width:180px;max-width:260px;overflow-y:auto;background:#1a1a1a;border-right:1px solid #333;padding:12px}
+.rightpanel{flex:0 0 20%;min-width:240px;max-width:360px;overflow-y:auto;background:#1a1a1a;border-left:1px solid #333;padding:12px}
+.stage{flex:1 1 63%;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:#222;background-image:linear-gradient(45deg,#2a2a2a 25%,transparent 25%),linear-gradient(-45deg,#2a2a2a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2a2a2a 75%),linear-gradient(-45deg,transparent 75%,#2a2a2a 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+.phone{width:390px;height:844px;position:relative;overflow:hidden;background:#ddd;border:2px solid #444;border-radius:36px;transform-origin:top left;flex:none;touch-action:none}
+.layer{position:absolute;transform-origin:0 0;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none}
+.layer img{width:100%;height:100%;object-fit:cover;display:block}
+.layer .txt{white-space:pre-wrap;text-align:center;width:100%}
+.selbox{position:absolute;border:2px solid #0a84ff;pointer-events:none;z-index:50}
+.handle{position:absolute;width:28px;height:28px;border-radius:50%;background:#0a84ff;border:2px solid #fff;pointer-events:auto;cursor:nwse-resize;z-index:51;touch-action:none}
+.rothandle{position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #0a84ff;pointer-events:auto;cursor:grab;z-index:51;touch-action:none}
+.badge{position:absolute;background:#0a84ff;color:#fff;font-size:12px;padding:2px 6px;border-radius:6px;pointer-events:none;z-index:51;white-space:nowrap}
+.clock{position:absolute;left:0;right:0;top:70px;text-align:center;z-index:20;pointer-events:none;text-shadow:0 2px 12px rgba(0,0,0,.6);color:#fff}
+.clock.dark{color:#111;text-shadow:none}
+.clock .t{font-size:72px;font-weight:700;line-height:1}
+.clock .d{font-size:16px;margin-top:6px}
+.statusbar{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;font-size:13px;z-index:21;pointer-events:none;color:#fff}
+.statusbar.dark{color:#111}
+.dock{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;padding:0 36px;z-index:21;pointer-events:none;font-size:22px}
+.homebar{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:120px;height:5px;border-radius:3px;background:#fff;z-index:21;pointer-events:none}
+.card{background:#1d1d1d;border:1px solid #333;border-radius:12px;padding:12px;margin-bottom:12px}
+.card h3{font-size:14px;margin:0 0 10px;color:#aaa}
+label{display:block;font-size:13px;color:#ccc;margin:8px 0 4px}
+input[type=text],input[type=number],select,textarea{width:100%;padding:8px;background:#222;color:#eee;border:1px solid #444;border-radius:8px}
+input[type=range]{width:100%}
+.row{display:flex;gap:8px}
+.row button{flex:1;padding:9px;border:0;border-radius:8px;background:#333;color:#fff;font-size:14px}
+.row button.on{background:#0a84ff}
+.layerrow{display:flex;align-items:center;gap:6px;padding:8px;border-radius:8px;cursor:pointer}
+.layerrow.sel{background:#0a84ff33;border:1px solid #0a84ff}
+.layerrow button{width:auto;padding:4px 8px;background:#333;border:0;border-radius:6px;color:#fff;font-size:12px}
+.rail{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.rail button{flex:1;padding:8px 4px;background:#333;border:0;border-radius:8px;color:#fff;font-size:13px}
+.rail button.on{background:#0a84ff}
+.dial{width:64px;height:64px;border-radius:50%;border:2px solid #666;background:#222;color:#fff;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none}
+.anchorgrid{display:grid;grid-template-columns:repeat(3,36px);gap:4px}
+.anchorgrid button{padding:8px;background:#333;border:0;border-radius:6px;color:#fff}
+.anchorgrid button.on{background:#0a84ff}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+.modal.open{display:flex}
+.modal .box{background:#1d1d1d;border:1px solid #444;border-radius:14px;padding:18px;width:min(560px,92vw);max-height:88dvh;overflow-y:auto}
+.modal .box button{padding:10px 14px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:10px}
+.modal .box button.primary{background:#0a84ff}
+.sideTools{position:absolute;z-index:60;display:flex;flex-direction:column;gap:6px}
+.sideTools button{width:38px;height:38px;border-radius:50%;border:1px solid #555;background:#1a1a1a;color:#fff;font-size:16px}
+.playbar{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;z-index:61;display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.7);padding:6px 10px;border-radius:20px}
+.playbar button{padding:6px 10px;border:0;border-radius:14px;background:#333;color:#fff}
+@keyframes floatY{0%,100%{margin-top:0}50%{margin-top:-12px}} @keyframes fadeOp{0%,100%{opacity:1}50%{opacity:.65}} @keyframes sway{0%,100%{rotate:0deg}50%{rotate:3deg}}
+#msg{font-size:13px;color:#ffb340;white-space:pre-wrap;min-height:18px}
+
+@media (max-width:900px){
+  .leftpanel{flex:0 0 17%;min-width:140px;max-width:180px;padding:8px}
+  .rightpanel{flex:0 0 20%;min-width:180px;max-width:220px;padding:8px}
+  .topbar button{padding:6px 8px;font-size:13px}
+  .topbar .saved{min-width:60px;font-size:12px}
+}
+@media (min-width:901px){
+  .leftpanel{flex:0 0 17%;min-width:200px;max-width:320px}
+  .rightpanel{flex:0 0 20%;min-width:260px;max-width:400px}
+}
+
+.leftpanel .row, .rightpanel .row{flex-direction:column}
+.leftpanel .row button, .rightpanel .row button{width:100%}
+.rail{flex-direction:column}
+.rail button{width:100%}
+.layerrow{flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+.layerrow .lname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layerrow button{flex:none;padding:4px 6px;font-size:12px}
+#stateRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#stateRow button{width:100%;min-height:44px;padding:12px 6px;font-size:15px}
+.phone.state-anim .layer{transition:top .45s ease,left .45s ease,width .45s ease,height .45s ease,opacity .45s ease}
+.phone.sleep .clock,.phone.sleep .statusbar{opacity:.25}
+#phoneHint{position:absolute;left:50%;transform:translateX(-50%);bottom:48px;z-index:22;background:rgba(0,0,0,.65);color:#fff;font-size:13px;padding:6px 12px;border-radius:20px;pointer-events:none;white-space:nowrap}
+.rightpanel{ text-align:left }
+</style>
+</head>
+<body>
+
+<div id="homeView" style="position:fixed;inset:0;z-index:200;background:#000;color:#fff;overflow-y:auto;padding:24px 32px">
+<div style="max-width:1100px;margin:0 auto">
+<div style="display:flex;align-items:center;gap:8px"><button id="homeBack" style="background:none;border:0;color:#fff;font-size:16px">← Back</button></div>
+<h1 style="margin:8px 0 4px;font-size:32px">Your Projects</h1>
+<p style="color:#aaa;margin:0 0 16px">Create and manage your CoreAnimation projects stored locally on your device.</p>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<input id="homeSearch" placeholder="Search projects by name..." style="flex:1;min-width:200px;padding:10px;border:1px solid #333;border-radius:10px;background:#111;color:#fff">
+<button id="homeGrid" style="padding:10px;border:1px solid #333;border-radius:10px;background:#222;color:#fff">▦</button>
+<button id="homeList" style="padding:10px;border:1px solid #333;border-radius:10px;background:#111;color:#fff">☰</button>
+<button id="homeFilter" style="padding:10px;border:1px solid #333;border-radius:10px;background:#111;color:#fff">⚙</button>
+<span style="flex:1"></span>
+<button id="homeSelect" style="padding:10px 16px;border:1px solid #333;border-radius:10px;background:#111;color:#fff">Select</button>
+<button id="homeImport" style="padding:10px 16px;border:1px solid #333;border-radius:10px;background:#111;color:#fff">↑ Import</button>
+<button id="homeImportFolder" style="padding:10px 16px;border:1px solid #333;border-radius:10px;background:#111;color:#fff">导入文件夹</button>
+<button id="homeNew" style="padding:10px 16px;border:0;border-radius:10px;background:#fff;color:#000;font-weight:700">+ New Project</button>
+</div>
+<div id="homeDeleteBar" style="display:none;margin-top:12px"><button id="homeDeleteSel" style="padding:10px 16px;border:0;border-radius:10px;background:#c00;color:#fff">删除选中</button> <span id="homeSelCount"></span></div>
+<h2 style="margin:24px 0 12px">Your Projects (<span id="homeCount">0</span>)</h2>
+<div id="homeCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px"></div>
+<p id="homeEmpty" style="color:#888">还没有项目，点右上角 New Project 新建，或 Import 直接选 .tendies 文件。点「导入文件夹」时会进选文件夹模式：里面文件是灰的、点不了是正常的，点右上角「打开」选整个文件夹就行，文件夹里有 .tendies 会自动解开导入。</p>
+</div>
+</div>
+<div class="topbar">
+<button id="btnBack" title="返回项目列表">←</button>
+<button class="proj" id="btnProj">壁纸项目 ▾</button>
+<button id="btnUndo">↩ 撤销</button><button id="btnRedo">↪ 重做</button>
+<span class="saved" id="savedLabel">● 已保存</span>
+<button id="btnCanvas">Floating ▾</button>
+<button id="btnHideLeft">隐藏左栏</button><button id="btnHideRight">隐藏右栏</button>
+<button id="btnTheme">🌙</button><button id="btnSettings">⚙ 设置</button>
+<button id="btnImportBg" style="background:#333">导入背景图</button>
+<button id="btnImportFg" style="background:#333">导入前景图</button>
+<span class="spacer"></span>
+<button class="primary" id="btnExportTop">导出</button>
+</div>
+<div class="wrap">
+<div class="leftpanel" id="leftPanel">
+<div class="card"><h3>图层 Layers</h3>
+<button id="btnAddLayer" style="width:100%;padding:10px;border:0;border-radius:8px;background:#0a84ff;color:#fff">+ 添加图层</button>
+<div id="addMenu" style="display:none;margin-top:8px"></div>
+<div style="margin-top:10px;font-weight:700">Root Layer</div>
+<div id="layerList"></div>
+<p style="font-size:12px;color:#888;margin:6px 0 0">双击文件名出菜单；按住 ☰ 或按住图层行上下拖可调顺序；点文件名即在画布选中该图层。</p>
+</div>
+<div class="card"><h3>状态 States</h3>
+<div class="row" id="stateRow">
+<button data-state="Base">基础</button><button data-state="Locked" class="on">锁定</button><button data-state="Unlock">解锁</button><button data-state="Sleep">睡眠</button>
+</div>
+<label><input type="checkbox" id="depthEffect" checked> Depth Effect（开=时钟深色，关=时钟白色）</label>
+<label><input type="checkbox" id="showBg" checked> 显示背景（Show background）</label>
+</div>
+</div>
+<div class="stage" id="stage">
+<div id="phoneWrap" style="position:relative">
+<div class="phone" id="phone">
+<div class="statusbar" id="statusbar"><span id="sbLeft">9:41</span><span>CAPG 📶 📡 🔋 100</span></div>
+<div class="clock" id="clock"><div class="t" id="clockTime">9:41</div><div class="d" id="clockDate">10月29日</div></div>
+<div id="layersHost" style="position:absolute;inset:0;z-index:1"></div><div id="guideOverlay" style="position:absolute;inset:0;z-index:35;pointer-events:none"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(10,132,255,.6)"></div><div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(10,132,255,.6)"></div><div style="position:absolute;left:0;right:0;top:0;bottom:0;border:1px dashed rgba(10,132,255,.6)"></div></div>
+<div class="dock"><span>🔦</span><span>📷</span></div>
+<div id="phoneGesture" style="position:absolute;left:0;right:0;bottom:0;height:70px;z-index:50"></div><div class="homebar"></div><div id="phoneHint" style="display:none">点一下唤醒 · 上滑解锁</div>
+</div>
+<div id="selOverlay" style="position:absolute;inset:0;pointer-events:none;z-index:40"></div>
+</div>
+<div id="depthPill" style="position:absolute;right:8px;top:8px;z-index:61;display:flex;align-items:center;gap:6px;background:#111;border:1px solid #333;padding:6px 10px;border-radius:20px;color:#fff;font-size:13px">Depth Effect <label style="display:flex;align-items:center"><input type="checkbox" id="depthEffect2" checked style="width:36px;height:20px;accent-color:#0a84ff"> <span id="depthState">开</span></label></div>
+<div id="toolsLeft" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:61;display:flex;flex-direction:column;gap:8px">
+<button id="toolPreview" title="预览" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">👁</button>
+<button id="toolGuide" title="参考线" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">▦</button>
+<button id="toolClip" title="裁剪到画布" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">✂</button>
+<button id="toolUnlock" title="解锁预览" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">🔓</button>
+<button id="toolSleep" title="睡眠预览" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">🌙</button>
+</div>
+<div id="toolsRight" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:61;display:flex;flex-direction:column;gap:8px">
+<button id="toolZoomIn" title="放大" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">+</button>
+<button id="toolZoomOut" title="缩小" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">−</button>
+<button id="toolRecenter" title="居中" style="width:44px;height:44px;background:#111;color:#fff;border:1px solid #333;border-radius:10px;font-size:18px;touch-action:none">◎</button>
+</div>
+<div class="playbar"
+<div class="playbar" id="playbar" style="display:none"><button id="btnPlay">▶ 播放</button><button id="btnRestart">↺ 重播</button><span id="playTime">0.00s</span></div>
+</div>
+<div class="rightpanel" id="rightPanel">
+<div id="noSel" class="card"><p>✏️ 选一个图层。</p></div>
+<div id="inspector" style="display:none">
+<div class="rail" id="rail">
+<button data-tab="geometry" class="on">◇ 几何</button><button data-tab="compositing">▤ 合成</button><button data-tab="content">▦ 内容</button><button data-tab="type">T 类型</button><button data-tab="animations">▶ 动画</button><button data-tab="filters">✦ 滤镜</button>
+</div>
+<div class="card" data-panel="geometry">
+<h3>几何 Geometry</h3>
+<label>X</label><input type="number" id="fX" step="1">
+<label>Y</label><input type="number" id="fY" step="1">
+<label>Z</label><input type="number" id="fZ" step="1" value="0">
+<label>宽度 Width</label><input type="number" id="fW" step="1">
+<label>高度 Height</label><input type="number" id="fH" step="1">
+<label>规模 Scale <span id="fScaleVal">100%</span></label><input type="range" id="fScale" min="20" max="400" value="100">
+<label>旋转 Rotation X/Y/Z（转盘可拖动，Z 滑杆）</label>
+<div class="row"><div class="dial" id="dialX">X 0°</div><div class="dial" id="dialY">Y 0°</div><div class="dial" id="dialZ">Z 0°</div></div>
+<input type="range" id="fRot" min="-180" max="180" value="0">
+<label>锚点 Anchor Point</label><div class="anchorgrid" id="anchorGrid"></div>
+<label><input type="checkbox" id="fCustomAnchor"> 自定义锚点</label>
+<label><input type="checkbox" id="fFlip"> 镜像翻转 Flip Geometry（影响子图层坐标系）</label>
+<button id="btnResetLayer" style="width:100%;padding:10px;border:0;border-radius:8px;background:#333;color:#fff">恢复本层默认（保留图片）</button>
+</div>
+<div class="card" data-panel="compositing" style="display:none">
+<h3>合成 Compositing</h3>
+<label>混合模式 Blending</label><select id="fBlend"><option value="">选择混合模式</option><option>normal</option><option>multiply</option><option>screen</option><option>overlay</option><option>soft-light</option></select>
+<label>透明度 Opacity <span id="fOpVal">100%</span></label><input type="range" id="fOp" min="0" max="100" value="100">
+<label>圆角 Corner Radius</label><input type="number" id="fRadius" value="0">
+<label><input type="checkbox" id="fClip"> 裁剪内容 Clip contents（按边界遮罩子图层）</label>
+<label>三态：解锁时上移</label><input type="number" id="fUnlockDy" value="60">
+<label>三态：解锁时透明度 %</label><input type="number" id="fUnlockOp" value="100">
+<label>三态：睡眠时透明度 %</label><input type="number" id="fSleepOp" value="35">
+</div>
+<div class="card" data-panel="content" style="display:none">
+<h3>内容 Content</h3>
+<label>背景色 Background colour</label><input type="color" id="fBgColor" value="#ffffff">
+<label>背景透明度 Background opacity <span id="fBgOpVal">100%</span></label><input type="range" id="fBgOp" min="0" max="100" value="100">
+<label>边框色 Border colour</label><input type="color" id="fBorderColor" value="#000000">
+<label>边框宽 Border width</label><input type="number" id="fBorderW" value="">
+</div>
+<div class="card" data-panel="type" style="display:none">
+<h3>类型属性</h3>
+<div id="typeFields"></div>
+</div>
+<div class="card" data-panel="animations" style="display:none">
+<h3>动画 Animations</h3>
+<label>添加动画 Add animation</label><select id="fAnim"><option value="none">无</option><option value="float">上下浮动</option><option value="fade">淡入淡出</option><option value="sway">左右摇摆</option><option value="custom3">自定义 3 帧</option></select>
+<label>一轮时长（秒）</label><input type="number" id="fAnimDur" min="1" max="10" step="0.5" value="3">
+<label>自定义帧1 上下</label><input type="number" id="fK1" value="0">
+<label>自定义帧2 上下</label><input type="number" id="fK2" value="-60">
+<label>自定义帧3 上下</label><input type="number" id="fK3" value="0">
+<p style="font-size:12px;color:#999">有动画时画布下方出现播放 / 重播 / 时间条。</p>
+</div>
+<div class="card" data-panel="filters" style="display:none">
+<h3>滤镜 Filters</h3>
+<label>添加滤镜 Add filter</label><select id="fFilter"><option value="none">无</option><option value="brightness">亮度</option><option value="contrast">对比度</option><option value="saturate">饱和度</option><option value="blur">模糊</option></select>
+<label>滤镜强度 <span id="fFilterVal">50</span></label><input type="range" id="fFilterAmt" min="0" max="100" value="50">
+<p style="font-size:12px;color:#999">滤镜以 CSS filter 在预览中呈现，导出时写入对应参数（亮度/对比度/饱和度/模糊）。</p>
+</div>
+</div>
+<div class="card"><h3>导出</h3>
+<button id="btnExport2" style="width:100%;padding:12px;border:0;border-radius:10px;background:#0a84ff;color:#fff">导出 .tendies</button>
+<div id="msg"></div>
+<p style="font-size:12px;color:#999">导出后走 App 原生桥弹分享单，选“存储到文件”后文件在“文件”App 里；纯浏览器打开时回退下载。仅背景图为必填。</p>
+</div>
+</div>
+</div>
+<input type="file" id="fileBg" accept="image/*" style="display:none"><input type="file" id="fileTendies" accept="*/*" style="display:none"><input type="file" id="fileFolder" webkitdirectory style="display:none">
+<input type="file" id="fileFg" accept="image/*" style="display:none">
+<input type="file" id="fileLayer" accept="image/*,video/*" style="display:none">
+<div class="modal" id="settingsModal"><div class="box">
+<h3>设置 Editor Settings · 版本 0.1.1</h3>
+<label>界面密度 Interface Density</label><select id="setDensity"><option>Default</option><option>Compact</option></select>
+<label>吸附 Snapping</label>
+<label><input type="checkbox" id="snapEdge" checked> 吸附到画布边缘</label>
+<label><input type="checkbox" id="snapLayer" checked> 吸附到其他图层</label>
+<label><input type="checkbox" id="snapResize" checked> 调整大小时吸附</label>
+<label><input type="checkbox" id="snapRot" checked> 旋转吸附（0°/90°/180°/270°）</label>
+<label>吸附灵敏度 <span id="snapVal">12</span></label><input type="range" id="snapSens" min="1" max="30" value="12">
+<label>图层控制 Layer Controls</label>
+<label><input type="checkbox" id="showResizeBtns"> 显示几何调整按钮</label>
+<label><input type="checkbox" id="showAlignBtns"> 显示对齐按钮</label>
+<label>拖动改数值灵敏度 <span id="dragVal">3</span></label><input type="range" id="dragSens" min="1" max="10" value="3">
+<label>预览 Preview</label>
+<label><input type="checkbox" id="showAnchor"> 显示锚点</label>
+<label>捏合缩放灵敏度 <span id="pinchVal">1</span></label><input type="range" id="pinchSens" min="1" max="5" value="1">
+<label>面板宽度 Panels</label>
+<label>左栏宽度 px</label><input type="number" id="leftW" value="320">
+<label>右栏宽度 px</label><input type="number" id="rightW" value="400">
+<p style="font-size:12px;color:#999">快捷键：撤销 Ctrl+Z，重做 Ctrl+Shift+Z，放大 Ctrl++，缩小 Ctrl+-，复位缩放 Ctrl+0，导出 Ctrl+E，平移 Shift+拖动，隐藏左栏 Ctrl+Shift+L，隐藏右栏 Ctrl+Shift+I，前移 Ctrl+]，后移 Ctrl+[，置顶 Ctrl+Shift+]，置底 Ctrl+Shift+[，删除 Delete，中心缩放 Alt+拖手柄，保持比例 Shift+拖手柄。</p>
+<button class="primary" id="btnCloseSettings">关闭</button>
+</div></div>
+<div class="modal" id="layerMenuModal"><div class="box">
+<h3 id="layerMenuTitle">图层</h3>
+<p id="layerMenuName" style="color:#ccc;font-size:14px;word-break:break-all"></p>
+<button id="layerMenuCopy" style="width:100%;padding:12px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:6px">复制图层</button>
+<button id="layerMenuDelete" style="width:100%;padding:12px;border:0;border-radius:8px;background:#a33;color:#fff;margin-top:6px">删除图层</button>
+<button id="layerMenuRename" style="width:100%;padding:12px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:6px">重命名</button>
+<button id="layerMenuUp" style="width:100%;padding:12px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:6px">上移一层 ↑</button>
+<button id="layerMenuDown" style="width:100%;padding:12px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:6px">下移一层 ↓</button>
+<button id="layerMenuPickImg" style="width:100%;padding:12px;border:0;border-radius:8px;background:#0a84ff;color:#fff;margin-top:6px">选择图片（补图）</button>
+<button id="layerMenuToggle" style="width:100%;padding:12px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:6px">显示 / 隐藏</button>
+<button id="layerMenuClose" style="width:100%;padding:12px;border:0;border-radius:8px;background:#555;color:#fff;margin-top:6px">关闭</button>
+</div></div>
+<div class="modal" id="exportModal"><div class="box">
+<h3>导出 Export</h3>
+<label>文件名 File name</label><input type="text" id="expName" value="壁纸项目">
+<label>格式 Format</label>
+<label><input type="radio" name="expFmt" value="tendies" checked> Tendies（.tendies，给 Pocket Poster / Nugget 装机）</label>
+<label><input type="radio" name="expFmt" value="ca"> .ca bundle（.zip，含 Background.ca 与 Floating.ca）</label>
+<label>版权 License</label><select id="expLicense"><option>No license</option><option>CC BY</option><option>All rights reserved</option></select>
+<p style="font-size:13px;color:#ccc">导出即确认：你创作了全部内容或已获得使用许可。No license 表示不附带许可文本，你保留全部权利。</p>
+<button class="primary" id="btnDoExport">导出</button><button id="btnCloseExport">关闭</button>
+<h3>接下来 What should I do next?</h3>
+<ol style="font-size:13px;color:#ccc;line-height:1.8">
+<li>看视频：用 Pocket Poster 或 Nugget 装机的方法</li>
+<li>真机测试：把壁纸装到设备上测试三态与动画</li>
+<li>展示作品（可选）：提交壁纸展示</li>
+</ol>
+</div></div>
+<div class="modal" id="projModal"><div class="box">
+<h3>项目</h3>
+<button id="btnRename" style="width:100%">重命名 Rename</button>
+<button id="btnBackProj" style="width:100%">回项目列表 Back to projects</button>
+<button id="btnDeleteProj" style="width:100%;background:#a33">删除项目 Delete（红色）</button>
+<button id="btnCloseProj" style="width:100%">关闭</button>
+</div></div>
+<div class="modal" id="canvasModal"><div class="box">
+<h3>选择当前画布 Choose Active CA</h3>
+<label><input type="checkbox" id="showBg2" checked> 显示背景 Show background</label>
+<button id="btnCanvasBg" style="width:100%">Background（在时钟后 Appears behind the clock）</button>
+<button id="btnCanvasFg" style="width:100%">Floating（在时钟前 Appears over the clock）</button>
+<button id="btnCloseCanvas" style="width:100%">关闭</button>
+</div></div>
+<script>
+const $=id=>{ const el=document.getElementById(id); if(el) return el; const stub={style:{},classList:{add(){},remove(){},toggle(){}},addEventListener(){},setPointerCapture(){},click(){},checked:false,value:'',textContent:'',innerHTML:'',dataset:{}}; return new Proxy(stub,{get(t,k){ if(k in t) return t[k]; return ()=>{}; }, set(t,k,v){ return true; }}); };
+let uid=1;
+function nid(){return 'L'+(uid++);}
+const DEFAULTS={x:195,y:422,w:390,h:844,scale:1,rot:0,op:1,anchorX:0.5,anchorY:0.5,flip:false,visible:true,blend:'',radius:0,clip:false,bgColor:'#ffffff',bgOp:1,borderColor:'#000000',borderW:'',unlockDy:60,unlockOp:100,sleepOp:35,anim:'none',animDur:3,k1:0,k2:-60,k3:0,filter:'none',filterAmt:50};
+function makeLayer(type,canvas,over){
+  const l=Object.assign({id:nid(),type:type,canvas:canvas||'floating',name:type+' Layer'},DEFAULTS,over||{});
+  if(type==='image' && !over?.bgColor) l.bgColor='transparent';
+  if(type==='text'){l.text='Text Layer';l.fontSize=16;l.color='#111827';l.font='System Default (SF Pro)';l.align='center';l.wrap=true;l.w=390;l.h=844;}
+  if(type==='gradient'){l.gradType='Axial (Linear)';l.startX=0;l.startY=0;l.endX=100;l.endY=100;l.stops=[{c:'#ffffff',op:100},{c:'#000000',op:100}];l.w=390;l.h=844;}
+  if(type==='basic'){l.bgColor='#0a84ff';l.w=390;l.h=844;}
+  if(type==='emitter'){l.count=60;l.w=390;l.h=844;}
+  if(type==='replicator'){l.count=5;l.w=390;l.h=844;}
+  if(type==='liquid'){l.w=390;l.h=844;}
+  if(type==='video'){l.w=390;l.h=844;}
+  return l;
+}
+let project={name:'壁纸项目',activeCanvas:'floating',showBg:true,gyro:false,gyroAmp:50,state:'Locked',layers:[],theme:'dark'};
+let selectedId=null, history=[], hIndex=-1, viewScale=1, zoom=1, previewOn=true, showGuide=true, clipCanvas=true;
+function saveHistory(){ history=history.slice(0,hIndex+1); history.push(JSON.stringify(project)); if(history.length>40) history.shift(); hIndex=history.length-1; }
+function persist(){ try{ localStorage.setItem('cap-replica-project', JSON.stringify(project)); $('savedLabel').textContent='● 已保存 '+new Date().toLocaleTimeString(); }catch(e){ $('savedLabel').textContent='● 保存失败'; } }
+let persistT=null; function scheduleSave(){ $('savedLabel').textContent='● 保存中…'; clearTimeout(persistT); persistT=setTimeout(persist,300); }
+function loadProject(){
+  try{ const s=localStorage.getItem('cap-replica-project'); if(s){ const p=JSON.parse(s); if(p&&Array.isArray(p.layers)){ project=Object.assign(project,p); return; } } }catch(e){}
+  // 默认示例：背景 + 前景两层，便于直接导出验证
+  project.layers=[makeLayer('image','background',{name:'背景',x:195,y:422,w:390,h:844,bgColor:'#888888'}), makeLayer('image','floating',{name:'漂浮（前景）',x:195,y:422,w:200,h:200})];
+  project.layers[0].imgKind='bg'; project.layers[1].imgKind='fg';
+}
+function sel(){ return project.layers.find(l=>l.id===selectedId)||null; }
+function statePos(l){
+  if(l.states && l.states[project.state]){
+    const s=l.states[project.state];
+    return {x:s.x!==undefined?s.x:l.x, y:s.y!==undefined?s.y:l.y, w:s.w!==undefined?s.w:l.w, h:s.h!==undefined?s.h:l.h, op:s.op!==undefined?s.op:l.op};
+  }
+  if(project.state==='Unlock') return {x:l.x, y:l.y-l.unlockDy, w:l.w, h:l.h, op:l.unlockOp/100};
+  if(project.state==='Sleep') return {x:l.x, y:l.y, w:l.w, h:l.h, op:l.sleepOp/100};
+  return {x:l.x, y:l.y, w:l.w, h:l.h, op:l.op};
+}
+function stateTransform(l){ const sp=statePos(l); return {dy:sp.y-l.y, op:sp.op}; }
+function setLayerPos(l, x, y, w, h){
+  if(l.states && project.state!=='Base'){
+    if(!l.states[project.state]) l.states[project.state]={};
+    const s=l.states[project.state];
+    if(x!==undefined) s.x=x; if(y!==undefined) s.y=y; if(w!==undefined) s.w=Math.max(20,w); if(h!==undefined) s.h=Math.max(20,h);
+  } else {
+    if(x!==undefined) l.x=x; if(y!==undefined) l.y=y; if(w!==undefined) l.w=Math.max(20,w); if(h!==undefined) l.h=Math.max(20,h);
+  }
+}
+function renderLayers(){
+  const host=$('layersHost'); host.innerHTML='';
+  // 背景画布在时钟下：把背景层放到 host 前，时钟在 DOM 上层（z-index 20），前景层也应在时钟上 —— 用两个容器近似：背景层 z 1，前景层通过时钟后叠加
+  // 实现：先渲染背景层，再用一个覆盖层渲染前景层（z-index 30，在时钟之上）
+  const bgHost=document.createElement('div'); bgHost.style.cssText='position:absolute;inset:0;z-index:1';
+  const fgHost=document.createElement('div'); fgHost.style.cssText='position:absolute;inset:0;z-index:30;pointer-events:none';
+  host.appendChild(bgHost); host.appendChild(fgHost);
+  project.layers.forEach(l=>{
+    if(!l.visible) return;
+    if(l.canvas==='background' && !project.showBg) return;
+    const sp=statePos(l);
+    const el=document.createElement('div'); el.className='layer'; el.dataset.id=l.id;
+    const w=sp.w*l.scale, h=sp.h*l.scale;
+    el.style.left=(sp.x-w*l.anchorX)+'px'; el.style.top=(sp.y-h*l.anchorY)+'px'; el.style.width=w+'px'; el.style.height=h+'px';
+    el.style.opacity=sp.op; el.style.transform='rotate('+l.rot+'deg) scaleX('+(l.flip?-1:1)+')'; el.style.borderRadius=(l.radius||0)+'px';
+    const layerBg=(l.type==='image' && (!l.bgColor || l.bgColor==='#ffffff')) ? 'transparent' : (l.bgColor||'transparent');
+    el.style.background=layerBg; el.style.mixBlendMode=l.blend||'normal';
+    if(l.borderW) el.style.border=l.borderW+'px solid '+l.borderColor;
+    if(l.type==='text'){ el.innerHTML='<div class="txt" style="font-size:'+(l.fontSize||16)+'px;color:'+(l.color||'#111827')+';text-align:'+(l.align||'center')+'">'+escapeHtml(l.text||'')+'</div>'; }
+    else if(l.type==='gradient'){ const s=l.stops||[]; const stops=s.map(x=>x.c+' '+(x.op||100)+'%').join(','); el.style.background='linear-gradient(180deg,'+stops+')'; }
+    else if(l.type==='emitter'){ el.innerHTML='<div style="font-size:48px">✦ · ✦ · ✦</div>'; el.style.background='transparent'; }
+    else if(l.type==='replicator'){ el.innerHTML='<div style="display:flex;gap:8px"><div style="width:40px;height:40px;background:#0a84ff;border-radius:8px"></div><div style="width:40px;height:40px;background:#0a84ff;border-radius:8px;opacity:.7"></div><div style="width:40px;height:40px;background:#0a84ff;border-radius:8px;opacity:.4"></div></div>'; el.style.background='transparent'; }
+    else if(l.type==='liquid'){ el.style.background='rgba(255,255,255,.16)'; el.style.border='1px solid rgba(255,255,255,.45)'; el.style.backdropFilter='blur(28px)'; el.style.borderRadius='52px'; }
+    else if(l.type==='video'){ el.innerHTML='<div style="color:#fff;background:#000;padding:10px">▶ 视频层（占位，导出时需自备视频文件）</div>'; }
+    else if(l.dataUrl){ const im=document.createElement('img'); im.src=l.dataUrl; el.appendChild(im); }
+    else { el.innerHTML='<div style="color:#666;font-size:13px">'+escapeHtml(l.name)+'（未选图）</div>'; }
+    if(l.anim==='float') el.style.animation='floatY '+(l.animDur||3)+'s ease-in-out infinite'; else if(l.anim==='fade') el.style.animation='fadeOp '+(l.animDur||3)+'s ease-in-out infinite'; else if(l.anim==='sway') el.style.animation='sway '+(l.animDur||3)+'s ease-in-out infinite';
+    if(l.filter && l.filter!=='none'){ const a=(l.filterAmt||50)/50; el.style.filter = l.filter==='brightness' ? 'brightness('+a+')' : l.filter==='contrast' ? 'contrast('+a+')' : l.filter==='saturate' ? 'saturate('+a+')' : 'blur('+(l.filterAmt||50)/10+'px)'; }
+    el.style.pointerEvents='auto';
+    el.addEventListener('pointerdown', e=>{ e.stopPropagation(); selectLayer(l.id); startDrag(e,l,'move'); });
+    (l.canvas==='background'?bgHost:fgHost).appendChild(el);
+  });
+  renderLayerList(); renderInspector(); renderSelOverlay(); updatePlaybar();
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let lastNameClick={id:null,t:0}; let suppressNameClickUntil=0;
+// 图层拖动调顺序：用 window 级监听 + pointer capture，手指离开原行后仍能跟手（旧版把 move 绑在行上，手指一出原行就断了，这就是按住拖没反应的根因）
+let rowDrag=null;
+window.addEventListener('pointermove', e=>{
+  if(!rowDrag) return; rowDrag.moved=true; if(e.cancelable) e.preventDefault();
+  const list=$('layerList'); if(!list) return;
+  const rows=[...list.children].filter(x=>x.classList.contains('layerrow'));
+  let ti=rows.length-1;
+  for(let i=0;i<rows.length;i++){ const r=rows[i].getBoundingClientRect(); if(e.clientY < r.top + r.height/2){ ti=i; break; } }
+  rowDrag.targetDi=ti;
+  if(rowDrag.line){ rowDrag.line.remove(); const ref=rows[Math.min(ti, rows.length-1)]; if(ref) list.insertBefore(rowDrag.line, ref); }
+}, {passive:false});
+function endRowDrag(){
+  if(!rowDrag) return; const rd=rowDrag; rowDrag=null;
+  if(rd.el){ rd.el.style.opacity=''; rd.el.style.outline=''; }
+  if(rd.line) rd.line.remove();
+  if(rd.moved && rd.targetDi!==rd.di){
+    const n=project.layers.length; const i=project.layers.indexOf(rd.l);
+    if(i>=0){ const [item]=project.layers.splice(i,1); project.layers.splice(n-1-rd.targetDi,0,item); saveHistory(); scheduleSave(); }
+    suppressNameClickUntil=Date.now()+400;
+  }
+  renderLayers();
+}
+window.addEventListener('pointerup', ()=>{ if(rowDrag) endRowDrag(); });
+window.addEventListener('pointercancel', ()=>{ if(rowDrag) endRowDrag(); });
+function startRowDrag(l, di, el){
+  rowDrag={l:l, di:di, targetDi:di, moved:false, el:el, line:null};
+  el.style.opacity='0.6'; el.style.outline='2px solid #0a84ff';
+  const line=document.createElement('div'); line.style.cssText='height:3px;background:#0a84ff;border-radius:2px;margin:2px 0'; rowDrag.line=line;
+}
+function renderLayerList(){
+  const list=$('layerList'); list.innerHTML='';
+  const disp=project.layers.slice().reverse();
+  disp.forEach((l,di)=>{
+    const d=document.createElement('div'); d.className='layerrow'+(l.id===selectedId?' sel':'');
+    d.style.cssText='padding:2px 8px;margin:0;touch-action:pan-x;user-select:none;-webkit-user-select:none';
+    const nameEl=document.createElement('span'); nameEl.className='lname'; nameEl.title=l.name; nameEl.textContent=l.name||'(未命名图层)';
+    nameEl.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.2;padding:2px';
+    nameEl.onclick=e=>{ e.stopPropagation(); if(Date.now()<suppressNameClickUntil) return; selectLayer(l.id); renderSelOverlay();
+      const now=Date.now();
+      if(lastNameClick.id===l.id && now-lastNameClick.t<400){ showLayerMenu(l); lastNameClick={id:null,t:0}; }
+      else lastNameClick={id:l.id,t:now};
+    };
+    const eye=document.createElement('button'); eye.textContent=l.visible?'👁':'🚫'; eye.style.cssText='flex:none;padding:3px 6px;font-size:12px'; eye.onclick=e=>{e.stopPropagation(); l.visible=!l.visible; saveHistory(); scheduleSave(); renderLayers();};
+    const grip=document.createElement('span'); grip.textContent='☰'; grip.title='按住拖动调顺序'; grip.style.cssText='flex:none;padding:4px 2px;font-size:14px;color:#888;touch-action:none;cursor:grab;-webkit-touch-callout:none';
+    grip.addEventListener('pointerdown', e=>{ e.stopPropagation(); try{ grip.setPointerCapture(e.pointerId); }catch(err){} startRowDrag(l, di, d); });
+    grip.addEventListener('contextmenu', e=>e.preventDefault());
+    d.appendChild(grip); d.appendChild(eye); d.appendChild(nameEl); list.appendChild(d);
+    // 按住图层行 350ms 后也可进入拖动（☰ 把手是立即拖动，更稳）
+    let pressTimer=null;
+    d.addEventListener('pointerdown', e=>{
+      if(e.target.closest('button')) return;
+      if(e.target===grip) return;
+      try{ d.setPointerCapture(e.pointerId); }catch(err){}
+      pressTimer=setTimeout(()=>{ if(!rowDrag) startRowDrag(l, di, d); }, 350);
+    });
+    d.addEventListener('pointerup', ()=>{ clearTimeout(pressTimer); });
+    d.addEventListener('pointercancel', ()=>{ clearTimeout(pressTimer); });
+    d.addEventListener('contextmenu', e=>e.preventDefault());
+  });
+}
+function moveLayer(l,dir){ const i=project.layers.indexOf(l); const j=i+dir; if(j<0||j>=project.layers.length) return; const t=project.layers[i]; project.layers[i]=project.layers[j]; project.layers[j]=t; saveHistory(); scheduleSave(); renderLayers(); }
+let layerMenuId=null;
+function showLayerMenu(l){
+  layerMenuId=l.id;
+  $('layerMenuTitle').textContent='图层：'+(l.name||'');
+  $('layerMenuName').textContent='文件名：'+(l.name||'')+' ｜ 类型：'+l.type+' ｜ 画布：'+(l.canvas==='background'?'Background':'Floating');
+  $('layerMenuModal').classList.add('open');
+}
+$('layerMenuCopy').onclick=()=>{ const l=project.layers.find(x=>x.id===layerMenuId); if(!l) return; const c=JSON.parse(JSON.stringify(l)); c.id=nid(); c.name=l.name+' 副本'; project.layers.push(c); selectLayer(c.id); saveHistory(); scheduleSave(); renderLayers(); $('layerMenuModal').classList.remove('open'); };
+$('layerMenuDelete').onclick=()=>{ project.layers=project.layers.filter(x=>x.id!==layerMenuId); if(selectedId===layerMenuId) selectedId=null; saveHistory(); scheduleSave(); renderLayers(); $('layerMenuModal').classList.remove('open'); };
+$('layerMenuRename').onclick=()=>{ const l=project.layers.find(x=>x.id===layerMenuId); if(!l) return; const n=prompt('重命名图层', l.name); if(n){ l.name=n; saveHistory(); scheduleSave(); renderLayers(); } $('layerMenuModal').classList.remove('open'); };
+$('layerMenuUp').onclick=()=>{ const l=project.layers.find(x=>x.id===layerMenuId); if(l) moveLayer(l,1); $('layerMenuModal').classList.remove('open'); };
+$('layerMenuDown').onclick=()=>{ const l=project.layers.find(x=>x.id===layerMenuId); if(l) moveLayer(l,-1); $('layerMenuModal').classList.remove('open'); };
+$('layerMenuToggle').onclick=()=>{ const l=project.layers.find(x=>x.id===layerMenuId); if(l){ l.visible=!l.visible; saveHistory(); scheduleSave(); renderLayers(); } $('layerMenuModal').classList.remove('open'); };
+$('layerMenuPickImg').onclick=()=>{ const l=project.layers.find(x=>x.id===layerMenuId); if(l){ selectLayer(l.id); $('layerMenuModal').classList.remove('open'); $('fileLayer').click(); } };
+$('layerMenuClose').onclick=()=>$('layerMenuModal').classList.remove('open');
+
+function selectLayer(id){ selectedId=id; renderLayers(); }
+function renderInspector(){
+  const l=sel(); $('noSel').style.display=l?'none':'block'; $('inspector').style.display=l?'block':'none'; if(!l) return;
+  const spI=statePos(l); $('fX').value=spI.x; $('fY').value=spI.y; $('fZ').value=0; $('fW').value=spI.w; $('fH').value=spI.h;
+  $('fScale').value=Math.round(l.scale*100); $('fScaleVal').textContent=Math.round(l.scale*100)+'%';
+  $('fRot').value=l.rot; $('dialX').textContent='X 0°'; $('dialY').textContent='Y 0°'; $('dialZ').textContent='Z '+Math.round(l.rot)+'°';
+  $('fCustomAnchor').checked=!!l.customAnchor; $('fFlip').checked=!!l.flip;
+  $('fBlend').value=l.blend||''; $('fOp').value=Math.round(l.op*100); $('fOpVal').textContent=Math.round(l.op*100)+'%';
+  $('fRadius').value=l.radius||0; $('fClip').checked=!!l.clip; $('fUnlockDy').value=l.unlockDy; $('fUnlockOp').value=l.unlockOp; $('fSleepOp').value=l.sleepOp;
+  $('fBgColor').value=l.bgColor||'#ffffff'; $('fBgOp').value=Math.round((l.bgOp??1)*100); $('fBgOpVal').textContent=Math.round((l.bgOp??1)*100)+'%';
+  $('fBorderColor').value=l.borderColor||'#000000'; $('fBorderW').value=l.borderW||'';
+  $('fAnim').value=l.anim||'none'; $('fAnimDur').value=l.animDur||3; $('fK1').value=l.k1??0; $('fK2').value=l.k2??-60; $('fK3').value=l.k3??0;
+  $('fFilter').value=l.filter||'none'; $('fFilterAmt').value=l.filterAmt||50; $('fFilterVal').textContent=l.filterAmt||50;
+  renderAnchorGrid(); renderTypeFields(l);
+}
+function renderAnchorGrid(){
+  const g=$('anchorGrid'); g.innerHTML=''; const l=sel(); if(!l) return;
+  [[0,1],[0.5,1],[1,1],[0,0.5],[0.5,0.5],[1,0.5],[0,0],[0.5,0],[1,0]].forEach(p=>{
+    const b=document.createElement('button'); b.textContent=p[0]+','+p[1]; if(l.anchorX===p[0]&&l.anchorY===p[1]) b.className='on';
+    b.onclick=()=>{ l.anchorX=p[0]; l.anchorY=p[1]; saveHistory(); scheduleSave(); renderLayers(); }; g.appendChild(b);
+  });
+}
+function renderTypeFields(l){
+  const f=$('typeFields'); f.innerHTML='';
+  if(l.type==='text'){
+    f.innerHTML='<label>文本 Text</label><input type="text" id="tfText" value="'+escapeHtml(l.text||'')+'"><label>字号 Font size</label><input type="number" id="tfSize" value="'+(l.fontSize||16)+'"><label>颜色 Color</label><input type="color" id="tfColor" value="'+(l.color||'#111827')+'"><label>字体 Font</label><select id="tfFont"><option>System Default (SF Pro)</option><option>PingFang SC</option><option>Helvetica</option></select><label>对齐 Alignment</label><div class="row"><button data-al="left">左</button><button data-al="center">中</button><button data-al="right">右</button><button data-al="justify">两端</button></div><label><input type="checkbox" id="tfWrap" '+(l.wrap?'checked':'')+'> 自动换行 Wrap lines（开时拖横向边界换行）</label>';
+    $('tfText').oninput=e=>{l.text=e.target.value; scheduleSave(); renderLayers();};
+    $('tfSize').oninput=e=>{l.fontSize=+e.target.value; scheduleSave(); renderLayers();};
+    $('tfColor').oninput=e=>{l.color=e.target.value; scheduleSave(); renderLayers();};
+    $('tfFont').onchange=e=>{l.font=e.target.value; scheduleSave(); renderLayers();};
+    f.querySelectorAll('[data-al]').forEach(b=>b.onclick=()=>{l.align=b.dataset.al; scheduleSave(); renderLayers();});
+    $('tfWrap').onchange=e=>{l.wrap=e.target.checked; scheduleSave(); renderLayers();};
+  } else if(l.type==='gradient'){
+    let stopsHtml=(l.stops||[]).map((s,i)=>'<div class="row"><input type="color" data-stop="'+i+'" value="'+s.c+'"><input type="range" data-stopop="'+i+'" min="0" max="100" value="'+(s.op||100)+'"><button data-delstop="'+i+'">×</button></div>').join('');
+    f.innerHTML='<label>类型 Type</label><select id="tfGrad"><option>Axial (Linear)</option><option>Radial</option></select><label>起点 X/Y %</label><div class="row"><input type="range" id="tfSX" min="0" max="100" value="'+(l.startX||0)+'"><input type="range" id="tfSY" min="0" max="100" value="'+(l.startY||0)+'"></div><label>终点 X/Y %</label><div class="row"><input type="range" id="tfEX" min="0" max="100" value="'+(l.endX||100)+'"><input type="range" id="tfEY" min="0" max="100" value="'+(l.endY||100)+'"></div><label>色标 Colors</label>'+stopsHtml+'<button id="tfAddStop" style="width:100%;padding:10px;border:0;border-radius:8px;background:#333;color:#fff">+ Add color</button>';
+    $('tfGrad').onchange=e=>{l.gradType=e.target.value; scheduleSave(); renderLayers();};
+    ['tfSX','tfSY','tfEX','tfEY'].forEach((id,k)=>{ $(id).oninput=e=>{ const keys=['startX','startY','endX','endY']; l[keys[k]]=+e.target.value; scheduleSave(); renderLayers(); }; });
+    f.querySelectorAll('[data-stop]').forEach(inp=>inp.oninput=e=>{l.stops[+e.target.dataset.stop].c=e.target.value; scheduleSave(); renderLayers();});
+    f.querySelectorAll('[data-stopop]').forEach(inp=>inp.oninput=e=>{l.stops[+e.target.dataset.stopop].op=+e.target.value; scheduleSave(); renderLayers();});
+    f.querySelectorAll('[data-delstop]').forEach(b=>b.onclick=()=>{l.stops.splice(+b.dataset.delstop,1); scheduleSave(); renderLayers();});
+    $('tfAddStop').onclick=()=>{l.stops.push({c:'#ffffff',op:100}); scheduleSave(); renderLayers();};
+  } else if(l.type==='image'){
+    f.innerHTML='<p style="font-size:13px;color:#ccc">图片层：点顶部“导入背景图 / 导入前景图”或下方按钮选图。</p><button id="tfPickImg" style="width:100%;padding:10px;border:0;border-radius:8px;background:#333;color:#fff">选择图片…</button>';
+    $('tfPickImg').onclick=()=>$('fileLayer').click();
+  } else {
+    f.innerHTML='<p style="font-size:13px;color:#ccc">类型：'+escapeHtml(l.type)+'。几何、合成、内容、动画、滤镜标签页均可调本层。</p>';
+    if(l.type==='emitter') f.innerHTML+='<label>粒子数量</label><input type="number" id="tfCount" value="'+(l.count||60)+'">';
+    if(l.type==='replicator') f.innerHTML+='<label>复制数量</label><input type="number" id="tfCount" value="'+(l.count||5)+'">';
+    const c=$('tfCount'); if(c) c.oninput=e=>{l.count=+e.target.value; scheduleSave(); renderLayers();};
+  }
+}
+// ---- 预览交互：拖动 / 控点 / 旋转 / 捏合 ----
+let dragState=null;
+function phoneScale(){ const wrap=$('phoneWrap'); return wrap._scale||1; }
+function fitPhone(){
+  const stage=$('stage'); const availW=stage.clientWidth-16, availH=stage.clientHeight-60;
+  const s=Math.min(availW/390, availH/844, 1); const wrap=$('phoneWrap'); wrap._scale=s;
+  $('phone').style.transform='scale('+s+')'; wrap.style.width=(390*s)+'px'; wrap.style.height=(844*s)+'px';
+  const ov=$('selOverlay'); if(ov){ ov.style.width=(390*s)+'px'; ov.style.height=(844*s)+'px'; ov.style.transform='none'; }
+}
+window.addEventListener('resize', fitPhone);
+function renderSelOverlay(){
+  const ov=$('selOverlay'); ov.innerHTML=''; const l=sel(); if(!l) return;
+  const s=phoneScale();
+  const sp=statePos(l); const w=sp.w*l.scale, h=sp.h*l.scale;
+  const box=document.createElement('div'); box.className='selbox';
+  box.style.left=((sp.x-w*l.anchorX)*s)+'px'; box.style.top=((sp.y-h*l.anchorY)*s)+'px'; box.style.width=(w*s)+'px'; box.style.height=(h*s)+'px'; box.style.transform='rotate('+l.rot+'deg)';
+  ov.appendChild(box);
+  const badge=document.createElement('div'); badge.className='badge'; badge.textContent=Math.round(w)+' x '+Math.round(h);
+  badge.style.left=((sp.x-w/2)*s)+'px'; badge.style.top=((sp.y+h/2+8)*s)+'px'; ov.appendChild(badge);
+  // 8 控点：角缩放双向，边中点单向；旋转手柄在上方
+  const pts=[['nw',0,0,'nwse'],['n',0.5,0,'ns'],['ne',1,0,'nesw'],['e',1,0.5,'ew'],['se',1,1,'nwse'],['s',0.5,1,'ns'],['sw',0,1,'nesw'],['w',0,0.5,'ew']];
+  pts.forEach(p=>{
+    const hd=document.createElement('div'); hd.className='handle'; hd.style.cursor=p[3]+'-resize';
+    hd.style.left=((sp.x-w*l.anchorX+w*p[1])*s-14)+'px'; hd.style.top=((sp.y-h*l.anchorY+h*p[2])*s-14)+'px';
+    hd.addEventListener('pointerdown', e=>{ e.stopPropagation(); startDrag(e,l,'handle',p); }); ov.appendChild(hd);
+  });
+  const rh=document.createElement('div'); rh.className='rothandle';
+  rh.style.left=(sp.x*s-14)+'px'; rh.style.top=((sp.y-h*l.anchorY)*s-40)+'px';
+  rh.addEventListener('pointerdown', e=>{ e.stopPropagation(); startDrag(e,l,'rotate'); }); ov.appendChild(rh);
+}
+function updateSelOverlay(){
+  const ov=$('selOverlay'); const l=sel(); if(!l) return; const s=phoneScale(); const sp=statePos(l); const w=sp.w*l.scale, h=sp.h*l.scale;
+  const box=ov.querySelector('.selbox'); if(box){ box.style.left=((sp.x-w*l.anchorX)*s)+'px'; box.style.top=((sp.y-h*l.anchorY)*s)+'px'; box.style.width=(w*s)+'px'; box.style.height=(h*s)+'px'; box.style.transform='rotate('+l.rot+'deg)'; }
+  const badge=ov.querySelector('.badge'); if(badge){ badge.textContent=Math.round(w)+' x '+Math.round(h); badge.style.left=((sp.x-w/2)*s)+'px'; badge.style.top=((sp.y+h/2+8)*s)+'px'; }
+  const pts=[[0,0],[0.5,0],[1,0],[1,0.5],[1,1],[0.5,1],[0,1],[0,0.5]];
+  ov.querySelectorAll('.handle').forEach((hd,i)=>{ const pp=pts[i]; if(pp){ hd.style.left=((sp.x-w*l.anchorX+w*pp[0])*s-14)+'px'; hd.style.top=((sp.y-h*l.anchorY+h*pp[1])*s-14)+'px'; } });
+  const rh=ov.querySelector('.rothandle'); if(rh){ rh.style.left=(sp.x*s-14)+'px'; rh.style.top=((sp.y-h*l.anchorY)*s-40)+'px'; }
+}
+function startDrag(e,l,mode,pt){
+  const s=phoneScale(); const sp=statePos(l); dragState={l:sel(),mode:mode,pt:pt,startX:e.clientX,startY:e.clientY,ox:sp.x,oy:sp.y,ow:sp.w,oh:sp.h,oscale:l.scale,orot:l.rot,shift:e.shiftKey,alt:e.altKey};
+  e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId);
+  const move=ev=>{
+    if(!dragState) return; if(ev.cancelable) ev.preventDefault(); const dx=(ev.clientX-dragState.startX)/s, dy=(ev.clientY-dragState.startY)/s; const L=dragState.l;
+    if(dragState.mode==='move'){ setLayerPos(L, dragState.ox+dx, dragState.oy+dy); }
+    else if(dragState.mode==='rotate'){ const cx=L.x, cy=L.y; const a0=Math.atan2(dragState.startY-(cy*s),dragState.startX-(cx*s)); const a1=Math.atan2(ev.clientY-(cy*s),ev.clientX-(cx*s)); let deg=dragState.orot+(a1-a0)*180/Math.PI; if(ev.shiftKey) deg=Math.round(deg/90)*90; L.rot=deg; }
+    else if(dragState.mode==='handle'){
+      const p=dragState.pt; const isCorner=(p[0]==='nw'||p[0]==='ne'||p[0]==='se'||p[0]==='sw');
+      let nw=dragState.ow, nh=dragState.oh;
+      if(p[1]!==0.5) nw=Math.max(20, dragState.ow + (p[1]===1?dx:-dx));
+      if(p[2]!==0.5) nh=Math.max(20, dragState.oh + (p[2]===1?dy:-dy));
+      if(dragState.shift || isCorner){ const r=Math.max(nw/dragState.ow, nh/dragState.oh); nw=dragState.ow*r; nh=dragState.oh*r; }
+      setLayerPos(L, undefined, undefined, nw, nh);
+    }
+    // 手指拖动时不重建 DOM（重建会丢触点捕获），只改选中层与框选框位置，松手再全量渲染
+    const el=document.querySelector('.layer[data-id="'+L.id+'"]');
+    if(el){ const sp2=statePos(L); const w2=sp2.w*L.scale, h2=sp2.h*L.scale; el.style.left=(sp2.x-w2*L.anchorX)+'px'; el.style.top=(sp2.y-h2*L.anchorY)+'px'; el.style.width=w2+'px'; el.style.height=h2+'px'; el.style.transform='rotate('+L.rot+'deg) scaleX('+(L.flip?-1:1)+')'; }
+    updateSelOverlay();
+  };
+  const up=()=>{ dragState=null; saveHistory(); scheduleSave(); renderLayers(); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); };
+  window.addEventListener('pointercancel',up);
+  window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+}
+// 双指捏合：放大缩小 + 跟着两指中心移动，手指松开前不重建 DOM
+let pinch={active:false, dist:0, baseScale:1, cx:0, cy:0, ox:0, oy:0, layer:null};
+function pinchStart(e){
+  pinch[e.pointerId]={x:e.clientX,y:e.clientY};
+  const ids=Object.keys(pinch).filter(k=>k!=='active'&&k!=='dist'&&k!=='baseScale'&&k!=='cx'&&k!=='cy'&&k!=='ox'&&k!=='oy'&&k!=='layer');
+  if(ids.length===2 && !pinch.active){
+    const ps=ids.map(id=>pinch[id]);
+    pinch.dist=Math.hypot(ps[0].x-ps[1].x, ps[0].y-ps[1].y);
+    pinch.cx=(ps[0].x+ps[1].x)/2; pinch.cy=(ps[0].y+ps[1].y)/2;
+    const l=sel(); pinch.layer=l; if(l){ pinch.baseScale=l.scale; const sp=statePos(l); pinch.ox=sp.x; pinch.oy=sp.y; }
+    pinch.active=true; dragState=null;
+  }
+}
+function pinchMove(e){
+  if(!pinch[e.pointerId]) return;
+  pinch[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(!pinch.active) return;
+  const ids=Object.keys(pinch).filter(k=>k!=='active'&&k!=='dist'&&k!=='baseScale'&&k!=='cx'&&k!=='cy'&&k!=='ox'&&k!=='oy'&&k!=='layer');
+  if(ids.length!==2) return;
+  const ps=ids.map(id=>pinch[id]);
+  const d=Math.hypot(ps[0].x-ps[1].x, ps[0].y-ps[1].y);
+  const ncx=(ps[0].x+ps[1].x)/2, ncy=(ps[0].y+ps[1].y)/2;
+  const l=pinch.layer; if(!l || !pinch.dist) return;
+  const s=phoneScale();
+  l.scale=Math.min(4,Math.max(0.2,pinch.baseScale*d/pinch.dist));
+  setLayerPos(l, pinch.ox+(ncx-pinch.cx)/s, pinch.oy+(ncy-pinch.cy)/s);
+  const el=document.querySelector('.layer[data-id="'+l.id+'"]');
+  if(el){ const sp2=statePos(l); const w2=sp2.w*l.scale, h2=sp2.h*l.scale; el.style.left=(sp2.x-w2*l.anchorX)+'px'; el.style.top=(sp2.y-h2*l.anchorY)+'px'; el.style.width=w2+'px'; el.style.height=h2+'px'; }
+  updateSelOverlay();
+}
+function pinchEnd(e){
+  delete pinch[e.pointerId];
+  const ids=Object.keys(pinch).filter(k=>k!=='active'&&k!=='dist'&&k!=='baseScale'&&k!=='cx'&&k!=='cy'&&k!=='ox'&&k!=='oy'&&k!=='layer');
+  if(pinch.active && ids.length<2){ pinch.active=false; if(pinch.layer){ saveHistory(); scheduleSave(); renderLayers(); } pinch.layer=null; }
+}
+window.addEventListener('pointerdown', pinchStart, true);
+window.addEventListener('pointermove', pinchMove, {passive:false});
+window.addEventListener('pointerup', pinchEnd, true);
+window.addEventListener('pointercancel', pinchEnd, true);
+// 状态切换（含动画过渡）：左栏、画布工具、手机手势都走这里
+function setState(s, msg){
+  project.state=s; $('phone').classList.toggle('sleep', s==='Sleep');
+  document.querySelectorAll('#stateRow button').forEach(x=>x.classList.toggle('on',x.dataset.state===s));
+  const ph=$('phone'); ph.classList.add('state-anim'); setTimeout(()=>ph.classList.remove('state-anim'), 550);
+  const hint=$('phoneHint');
+  if(hint){ hint.style.display='block'; hint.textContent=s==='Sleep'?'已睡眠：点一下手机唤醒':s==='Unlock'?'已解锁：下滑手机可锁定':s==='Locked'?'已锁定：上滑手机解锁':'基础状态'; setTimeout(()=>{ if(project.state===s) hint.style.display='none'; }, 2200); }
+  saveHistory(); scheduleSave(); renderLayers();
+  if(msg) $('msg').textContent=msg;
+}
+// 点手机本身做交互：睡眠点一下唤醒，锁定上滑解锁，解锁下滑锁定；点图层仍走拖动/捏合，不走这条
+let phoneTouch=null, phoneTouchCancelled=false;
+$('phone').addEventListener('pointerdown', e=>{
+  if(e.target.closest && e.target.closest('.layer,.handle,.rothandle')) return;
+  phoneTouch={x:e.clientX, y:e.clientY, t:Date.now()}; phoneTouchCancelled=false;
+});
+window.addEventListener('pointerdown', e=>{ if(phoneTouch && e.pointerId!==undefined) phoneTouchCancelled=true; }, true);
+let gestureTouch=null;
+$('phoneGesture').addEventListener('pointerdown', e=>{ gestureTouch={x:e.clientX, y:e.clientY, t:Date.now()}; e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId); });
+$('phoneGesture').addEventListener('pointerup', e=>{
+  if(!gestureTouch) return; const dx=e.clientX-gestureTouch.x, dy=e.clientY-gestureTouch.y, dt=Date.now()-gestureTouch.t; gestureTouch=null;
+  if(Math.abs(dy)>60 && Math.abs(dy)>Math.abs(dx)){
+    if(dy<0){ if(project.state==='Sleep') setState('Locked','已唤醒：再上滑一次解锁'); else if(project.state==='Locked') setState('Unlock','已解锁'); else $('msg').textContent='已是解锁状态'; }
+    else { if(project.state==='Unlock') setState('Locked','已锁定'); else if(project.state==='Locked') setState('Sleep','已睡眠：点一下手机唤醒'); else setState('Locked','已锁定'); }
+  } else if(Math.abs(dx)<12 && Math.abs(dy)<12 && dt<400){
+    // 底部点一下：睡眠唤醒、锁定直接解锁（画布底部点一下就有反应，不再只提示上滑）
+    if(project.state==='Sleep') setState('Locked','已唤醒：上滑手机解锁');
+    else if(project.state==='Locked') setState('Unlock','已解锁');
+    else $('msg').textContent='已解锁：下滑手机可锁定';
+  }
+});
+$('phone').addEventListener('pointerup', e=>{
+  if(!phoneTouch || phoneTouchCancelled || (typeof pinch!=='undefined' && pinch.active)) { phoneTouch=null; return; }
+  const dx=e.clientX-phoneTouch.x, dy=e.clientY-phoneTouch.y, dt=Date.now()-phoneTouch.t; phoneTouch=null;
+  if(Math.abs(dy)>60 && Math.abs(dy)>Math.abs(dx)){
+    if(dy<0){ if(project.state==='Sleep') setState('Locked','已唤醒：再上滑一次解锁'); else if(project.state==='Locked') setState('Unlock','已解锁'); else $('msg').textContent='已是解锁状态'; }
+    else { if(project.state==='Unlock') setState('Locked','已锁定'); else if(project.state==='Locked') setState('Sleep','已睡眠：点一下手机唤醒'); else setState('Locked','已锁定'); }
+  } else if(Math.abs(dx)<12 && Math.abs(dy)<12 && dt<400){
+    if(project.state==='Sleep') setState('Locked','已唤醒：上滑手机解锁');
+    else if(project.state==='Locked') $('msg').textContent='已锁定：上滑手机解锁（点一下不解锁）';
+    else $('msg').textContent='已解锁：下滑手机可锁定';
+  }
+});
+// ---- 状态 / 画布 / 工具 ----
+document.querySelectorAll('#stateRow button').forEach(b=>b.onclick=()=>setState(b.dataset.state,'已切换到'+b.dataset.state+'状态预览'));
+$('btnCanvas').onclick=()=>{ $('canvasModal').classList.add('open'); $('showBg2').checked=project.showBg; };
+$('btnCanvasBg').onclick=()=>{ project.activeCanvas='background'; $('canvasLabel').textContent='Background（在时钟后）'; $('btnCanvas').textContent='Background ▾'; $('canvasModal').classList.remove('open'); scheduleSave(); renderLayers(); };
+$('btnCanvasFg').onclick=()=>{ project.activeCanvas='floating'; $('canvasLabel').textContent='Floating（压时钟）'; $('btnCanvas').textContent='Floating ▾'; $('canvasModal').classList.remove('open'); scheduleSave(); renderLayers(); };
+$('btnCloseCanvas').onclick=()=>$('canvasModal').classList.remove('open');
+$('showBg2').onchange=e=>{ project.showBg=e.target.checked; $('showBg').checked=e.target.checked; scheduleSave(); renderLayers(); };
+$('showBg').onchange=e=>{ project.showBg=e.target.checked; scheduleSave(); renderLayers(); };
+$('depthEffect').onchange=e=>{ const dark=e.target.checked; $('clock').classList.toggle('dark',dark); $('statusbar').classList.toggle('dark',dark); scheduleSave(); };
+$('gyro').onchange=e=>{ project.gyro=e.target.checked; scheduleSave(); };
+$('gyroAmp').oninput=e=>{ project.gyroAmp=+e.target.value; $('gyroVal').textContent=e.target.value; scheduleSave(); };
+function applyZoom(){ const s=phoneScale()*zoom; $('phone').style.transform='scale('+s+')'; const wrap=$('phoneWrap'); wrap.style.width=(390*s)+'px'; wrap.style.height=(844*s)+'px'; const ov=$('selOverlay'); if(ov){ ov.style.width=(390*s)+'px'; ov.style.height=(844*s)+'px'; } renderSelOverlay(); $('msg').textContent='缩放 ' + Math.round(zoom*100) + '%'; }
+$('toolPreview').onclick=()=>{ previewOn=!previewOn; $('selOverlay').style.display=previewOn?'block':'none'; $('msg').textContent=previewOn?'预览已开：显示框选':'预览已关：隐藏框选'; };
+$('toolGuide').onclick=()=>{ showGuide=!showGuide; const g=$('guideOverlay'); if(g) g.style.display=showGuide?'block':'none'; $('msg').textContent=showGuide?'参考线已开':'参考线已关'; };
+$('toolClip').onclick=()=>{ clipCanvas=!clipCanvas; $('phone').style.overflow=clipCanvas?'hidden':'visible'; $('msg').textContent=clipCanvas?'裁剪到画布已开':'裁剪到画布已关：图层可超出手机框'; };
+$('toolUnlock').onclick=()=>setState(project.state==='Unlock'?'Locked':'Unlock','已切换到'+(project.state==='Unlock'?'Locked':'Unlock')+'状态预览');
+$('toolSleep').onclick=()=>setState(project.state==='Sleep'?'Locked':'Sleep','已切换到'+(project.state==='Sleep'?'Locked':'Sleep')+'状态预览');
+$('toolZoomIn').onclick=()=>{ zoom=Math.min(2,zoom+0.2); applyZoom(); };
+$('toolZoomOut').onclick=()=>{ zoom=Math.max(0.4,zoom-0.2); applyZoom(); };
+$('toolRecenter').onclick=()=>{ zoom=1; applyZoom(); };
+$('depthEffect2').onchange=(e)=>{ const c=$('depthEffect'); if(c){c.checked=e.target.checked; c.dispatchEvent(new Event('change'));} $('depthState').textContent=e.target.checked?'开':'关'; renderLayers(); };
+// ---- 图层菜单 / 导入 ----
+const LAYER_TYPES=[['text','文字 Text Layer'],['basic','基础 Basic Layer'],['gradient','渐变 Gradient Layer'],['image','图片 Image Layer…'],['video','视频 Video Layer…'],['emitter','粒子 Emitter Layer'],['replicator','复制器 Replicator Layer'],['liquid','液态玻璃 Liquid Glass Layer']];
+$('btnAddLayer').onclick=()=>{ const m=$('addMenu'); m.style.display=m.style.display==='none'?'block':'none'; if(m.innerHTML===''){ LAYER_TYPES.forEach(t=>{ const b=document.createElement('button'); b.textContent=t[1]; b.style.cssText='width:100%;padding:9px;border:0;border-radius:8px;background:#333;color:#fff;margin-top:4px'; b.onclick=()=>{ const l=makeLayer(t[0],project.activeCanvas); project.layers.push(l); selectLayer(l.id); if(t[0]==='image') $('fileLayer').click(); m.style.display='none'; saveHistory(); scheduleSave(); renderLayers(); }; m.appendChild(b); }); } };
+function readFileAsDataURL(file,cb){ const r=new FileReader(); r.onload=()=>cb(r.result); r.readAsDataURL(file); }
+$('btnImportBg').onclick=()=>$('fileBg').click(); $('btnImportFg').onclick=()=>$('fileFg').click();
+$('fileBg').onchange=e=>{ const f=e.target.files[0]; if(!f) return; readFileAsDataURL(f,url=>{ let bg=project.layers.find(l=>l.canvas==='background'&&l.type==='image'); if(!bg){ bg=makeLayer('image','background',{name:'背景',x:195,y:422,w:390,h:844}); project.layers.unshift(bg); } bg.dataUrl=url; bg.bgColor='transparent'; bg.w=390; bg.h=844; selectLayer(bg.id); saveHistory(); scheduleSave(); renderLayers(); }); };
+$('fileFg').onchange=e=>{ const f=e.target.files[0]; if(!f) return; readFileAsDataURL(f,url=>{ let fg=project.layers.find(l=>l.canvas==='floating'&&l.type==='image'); if(!fg){ fg=makeLayer('image','floating',{name:'漂浮（前景）',x:195,y:422,w:200,h:200}); project.layers.push(fg); } fg.dataUrl=url; fg.bgColor='transparent'; selectLayer(fg.id); saveHistory(); scheduleSave(); renderLayers(); }); };
+$('fileLayer').onchange=e=>{ const f=e.target.files[0]; const l=sel(); if(!f||!l) return; if(f.type.startsWith('image')){ readFileAsDataURL(f,url=>{ l.dataUrl=url; l.bgColor='transparent'; saveHistory(); scheduleSave(); renderLayers(); }); } else { l.name='视频层 '+f.name; saveHistory(); scheduleSave(); renderLayers(); } };
+// ---- 检查器绑定 ----
+function bindNum(id,fn){ $(id).oninput=e=>{ const l=sel(); if(!l) return; fn(l,+e.target.value||0); scheduleSave(); renderLayers(); }; }
+bindNum('fX',(l,v)=>setLayerPos(l,v,undefined)); bindNum('fY',(l,v)=>setLayerPos(l,undefined,v)); bindNum('fW',(l,v)=>setLayerPos(l,undefined,undefined,v)); bindNum('fH',(l,v)=>setLayerPos(l,undefined,undefined,undefined,v));
+$('fScale').oninput=e=>{ const l=sel(); if(!l) return; l.scale=+e.target.value/100; $('fScaleVal').textContent=e.target.value+'%'; scheduleSave(); renderLayers(); };
+$('fRot').oninput=e=>{ const l=sel(); if(!l) return; l.rot=+e.target.value; scheduleSave(); renderLayers(); };
+function bindDial(el,key){ let s=null; el.addEventListener('pointerdown',e=>{ s={y:e.clientY,v:sel()?sel().rot:0}; el.setPointerCapture(e.pointerId); }); el.addEventListener('pointermove',e=>{ if(!s) return; const l=sel(); if(!l) return; l.rot=s.v+(s.y-e.clientY); scheduleSave(); renderLayers(); }); el.addEventListener('pointerup',()=>{ s=null; saveHistory(); }); }
+bindDial($('dialZ'),'rot'); bindDial($('dialX'),'rot'); bindDial($('dialY'),'rot');
+$('fCustomAnchor').onchange=e=>{ const l=sel(); if(l){ l.customAnchor=e.target.checked; scheduleSave(); renderLayers(); } };
+$('fFlip').onchange=e=>{ const l=sel(); if(l){ l.flip=e.target.checked; scheduleSave(); renderLayers(); } };
+$('btnResetLayer').onclick=()=>{ const l=sel(); if(!l) return; const img=l.dataUrl, nm=l.name, tp=l.type, cv=l.canvas; Object.assign(l,DEFAULTS,{type:tp,canvas:cv,name:nm}); l.dataUrl=img; saveHistory(); scheduleSave(); renderLayers(); };
+$('fBlend').onchange=e=>{ const l=sel(); if(l){ l.blend=e.target.value; scheduleSave(); renderLayers(); } };
+$('fOp').oninput=e=>{ const l=sel(); if(l){ l.op=+e.target.value/100; $('fOpVal').textContent=e.target.value+'%'; scheduleSave(); renderLayers(); } };
+bindNum('fRadius',(l,v)=>l.radius=v); $('fClip').onchange=e=>{ const l=sel(); if(l){ l.clip=e.target.checked; scheduleSave(); renderLayers(); } };
+bindNum('fUnlockDy',(l,v)=>l.unlockDy=v); bindNum('fUnlockOp',(l,v)=>l.unlockOp=v); bindNum('fSleepOp',(l,v)=>l.sleepOp=v);
+$('fBgColor').oninput=e=>{ const l=sel(); if(l){ l.bgColor=e.target.value; scheduleSave(); renderLayers(); } };
+$('fBgOp').oninput=e=>{ const l=sel(); if(l){ l.bgOp=+e.target.value/100; $('fBgOpVal').textContent=e.target.value+'%'; scheduleSave(); renderLayers(); } };
+$('fBorderColor').oninput=e=>{ const l=sel(); if(l){ l.borderColor=e.target.value; scheduleSave(); renderLayers(); } };
+bindNum('fBorderW',(l,v)=>l.borderW=v);
+$('fAnim').onchange=e=>{ const l=sel(); if(l){ l.anim=e.target.value; scheduleSave(); renderLayers(); } };
+bindNum('fAnimDur',(l,v)=>l.animDur=v); bindNum('fK1',(l,v)=>l.k1=v); bindNum('fK2',(l,v)=>l.k2=v); bindNum('fK3',(l,v)=>l.k3=v);
+$('fFilter').onchange=e=>{ const l=sel(); if(l){ l.filter=e.target.value; scheduleSave(); renderLayers(); } };
+$('fFilterAmt').oninput=e=>{ const l=sel(); if(l){ l.filterAmt=+e.target.value; $('fFilterVal').textContent=e.target.value; scheduleSave(); renderLayers(); } };
+document.querySelectorAll('#rail button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#rail button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('[data-panel]').forEach(p=>p.style.display=(p.dataset.panel===b.dataset.tab)?'block':'none');
+});
+// ---- 动画播放条 ----
+let playTimer=null, playT=0;
+function updatePlaybar(){ const has=project.layers.some(l=>l.anim && l.anim!=='none'); $('playbar').style.display=has?'flex':'none'; }
+$('btnPlay').onclick=()=>{ if(playTimer){ clearInterval(playTimer); playTimer=null; $('btnPlay').textContent='▶ 播放'; return; } playT=0; playTimer=setInterval(()=>{ playT+=0.1; $('playTime').textContent=playT.toFixed(2)+'s'; if(playT>10){ clearInterval(playTimer); playTimer=null; $('btnPlay').textContent='▶ 播放'; } },100); $('btnPlay').textContent='⏸ 暂停'; };
+$('btnRestart').onclick=()=>{ playT=0; $('playTime').textContent='0.00s'; };
+// ---- 顶栏 / 设置 / 项目 / 导出 ----
+$('btnUndo').onclick=()=>{ if(hIndex>0){ hIndex--; project=JSON.parse(history[hIndex]); selectedId=null; renderLayers(); scheduleSave(); } };
+$('btnRedo').onclick=()=>{ if(hIndex<history.length-1){ hIndex++; project=JSON.parse(history[hIndex]); selectedId=null; renderLayers(); scheduleSave(); } };
+$('btnHideLeft').onclick=()=>{ const p=$('leftPanel'); const hid=p.style.display==='none'; p.style.display=hid?'block':'none'; $('btnHideLeft').textContent=hid?'隐藏左栏':'显示左栏'; setTimeout(fitPhone,50); };
+$('btnHideRight').onclick=()=>{ const p=$('rightPanel'); const hid=p.style.display==='none'; p.style.display=hid?'block':'none'; $('btnHideRight').textContent=hid?'隐藏右栏':'显示右栏'; setTimeout(fitPhone,50); };
+$('btnTheme').onclick=()=>{ document.body.style.background=document.body.style.background==='rgb(238, 238, 238)'?'#111':'#eee'; document.body.style.color=document.body.style.color==='rgb(17, 17, 17)'?'#eee':'#111'; };
+$('btnSettings').onclick=()=>$('settingsModal').classList.add('open');
+$('btnCloseSettings').onclick=()=>$('settingsModal').classList.remove('open');
+$('leftW').onchange=e=>{ $('leftPanel').style.flexBasis=e.target.value+'px'; };
+$('rightW').onchange=e=>{ $('rightPanel').style.flexBasis=e.target.value+'px'; };
+$('setDensity').onchange=e=>{ document.body.style.fontSize=e.target.value==='Compact'?'13px':'16px'; };
+$('snapSens').oninput=e=>$('snapVal').textContent=e.target.value;
+$('dragSens').oninput=e=>$('dragVal').textContent=e.target.value;
+$('pinchSens').oninput=e=>$('pinchVal').textContent=e.target.value;
+$('btnProj').onclick=()=>$('projModal').classList.add('open');
+$('btnCloseProj').onclick=()=>$('projModal').classList.remove('open');
+$('btnRename').onclick=()=>{ const n=prompt('重命名 Rename',project.name); if(n){ project.name=n; $('btnProj').textContent=n+' ▾'; $('expName').value=n; scheduleSave(); } $('projModal').classList.remove('open'); };
+$('btnBackProj').onclick=()=>{ alert('回项目列表 Back to projects（本单文件版不含项目列表页，项目已保存到本地）'); $('projModal').classList.remove('open'); };
+$('btnDeleteProj').onclick=()=>{ if(confirm('删除项目 Delete？')){ localStorage.removeItem('cap-replica-project'); location.reload(); } };
+$('btnBack').onclick=()=>$('btnBackProj').onclick();
+$('btnExportTop').onclick=()=>$('exportModal').classList.add('open');
+$('btnExport2').onclick=()=>$('exportModal').classList.add('open');
+$('btnCloseExport').onclick=()=>$('exportModal').classList.remove('open');
+document.addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey){ if(e.key==='z'&&!e.shiftKey){ e.preventDefault(); $('btnUndo').click(); } else if((e.key==='Z'||e.key==='z')&&e.shiftKey){ e.preventDefault(); $('btnRedo').click(); } else if(e.key==='e'||e.key==='E'){ e.preventDefault(); $('exportModal').classList.add('open'); } } if(e.key==='Delete'&&sel()){ project.layers=project.layers.filter(x=>x.id!==selectedId); selectedId=null; saveHistory(); scheduleSave(); renderLayers(); } });
+// ---- 导出：STORE 式 ZIP（无压缩，兼容 .tendies / .ca bundle） ----
+function crc32(bytes){ let table=crc32.table; if(!table){ table=[]; for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); table[n]=c>>>0; } crc32.table=table; } let c=0xFFFFFFFF; for(let i=0;i<bytes.length;i++) c=table[(c^bytes[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function storeZip(files){
+  const local=[], central=[]; let offset=0;
+  files.forEach(f=>{
+    const name=new TextEncoder().encode(f.name); const crc=crc32(f.data); const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true); lh.setUint16(8,0,true); lh.setUint16(10,0,true); lh.setUint16(12,0,true); lh.setUint32(14,crc,true); lh.setUint32(18,f.data.length,true); lh.setUint32(22,f.data.length,true); lh.setUint16(26,name.length,true); lh.setUint16(28,0,true);
+    local.push(new Uint8Array(lh.buffer), name, f.data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true); ch.setUint16(12,0,true); ch.setUint16(14,0,true); ch.setUint32(16,crc,true); ch.setUint32(20,f.data.length,true); ch.setUint32(24,f.data.length,true); ch.setUint16(28,name.length,true); ch.setUint32(42,offset,true);
+    central.push(new Uint8Array(ch.buffer), name); offset+=30+name.length+f.data.length;
+  });
+  const cdStart=offset; let cdLen=0; central.forEach(c=>cdLen+=c.length);
+  const end=new DataView(new ArrayBuffer(22)); end.setUint32(0,0x06054b50,true); end.setUint16(8,files.length,true); end.setUint16(10,files.length,true); end.setUint32(12,cdLen,true); end.setUint32(16,cdStart,true);
+  return new Blob([...local,...central,new Uint8Array(end.buffer)],{type:'application/zip'});
+}
+function escXml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// 坐标换算：预览 390x844 -> 设备 1290x2796，Y 轴反号（以中心为原点，向上为正）
+function devX(l){ return Math.round((l.x-195)/390*1290); }
+function devY(l){ return Math.round(-(l.y-422)/844*2796); }
+function layerCaml(l,canvas){
+  const w=Math.round(l.w/390*1290*l.scale), h=Math.round(l.h/844*2796*l.scale);
+  return '<CALayer name="'+escXml(l.name)+'" position="'+devX(l)+','+devY(l)+'" size="'+w+','+h+'" opacity="'+l.op+'" rotation="'+l.rot+'" anchor="'+l.anchorX+','+l.anchorY+'" src="'+(canvas==='background'?'assets/background.jpg':'assets/floating.png')+'"/>';
+}
+function bgCaml(){ const ls=project.layers.filter(l=>l.canvas==='background'); return '<?xml version="1.0"?><CA>'+ls.map(l=>layerCaml(l,'background')).join('')+'</CA>'; }
+function fgCaml(){ const ls=project.layers.filter(l=>l.canvas==='floating'); return '<?xml version="1.0"?><CA>'+ls.map(l=>layerCaml(l,'floating')).join('')+'</CA>'; }
+function gyroCaml(){ return '<?xml version="1.0"?><CA wallpaperGyro="true">'+project.layers.map(l=>layerCaml(l,l.canvas)).join('')+'</CA>'; }
+async function dataUrlToBytes(url){ if(!url) return null; const r=await fetch(url); return new Uint8Array(await r.arrayBuffer()); }
+async function doExport(){
+  const bg=project.layers.find(l=>l.canvas==='background');
+  if(!bg){ $('msg').textContent='导出失败：请先选背景图（自检拦下，不导出空包）。'; return; }
+  const name=($('expName').value||project.name||'壁纸项目').trim();
+  const fmt=document.querySelector('input[name="expFmt"]:checked').value;
+  const files=[];
+  if(project.gyro){
+    files.push({name:'Wallpaper.ca/main.caml',data:new TextEncoder().encode(gyroCaml())});
+  } else {
+    files.push({name:'Background.ca/main.caml',data:new TextEncoder().encode(bgCaml())});
+    files.push({name:'Floating.ca/main.caml',data:new TextEncoder().encode(fgCaml())});
+  }
+  // 背景图：优先用用户选图，否则用占位纯色 JPEG 近似（canvas 生成）
+  const bgBytes=await dataUrlToBytes(bg.dataUrl);
+  if(bgBytes) files.push({name:project.gyro?'Wallpaper.ca/assets/background.jpg':'Background.ca/assets/background.jpg',data:bgBytes});
+  const fg=project.layers.find(l=>l.canvas==='floating'&&l.dataUrl);
+  if(fg){ const fb=await dataUrlToBytes(fg.dataUrl); if(fb) files.push({name:project.gyro?'Wallpaper.ca/assets/floating.png':'Floating.ca/assets/floating.png',data:fb}); }
+  // 自检：空文件、缺主画布、caml 引用的 src 缺失即拦下
+  for(const f of files){ if(!f.data||f.data.length===0){ $('msg').textContent='导出自检失败：空文件 '+f.name+'，已拦下。'; return; } }
+  const zip=storeZip(files); const outName=fmt==='tendies'?name+'.tendies':name+'.zip';
+  $('msg').textContent='已导出 '+outName+'（'+(project.gyro?'视差 Wallpaper.ca':'Background.ca + Floating.ca')+'），请用分享单存到文件，再用 Pocket Poster / Nugget 导入。';
+  try{
+    const buf=await zip.arrayBuffer(); let bin=''; const bytes=new Uint8Array(buf);
+    for(let i=0;i<bytes.length;i+=8192){ bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+8192)); }
+    const b64=btoa(bin);
+    if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tendiesExport){
+      const CH=60000, total=Math.ceil(b64.length/CH);
+      window.webkit.messageHandlers.tendiesExport.postMessage({type:'start',id:'exp1',filename:outName,total:total});
+      for(let i=0;i<total;i++) window.webkit.messageHandlers.tendiesExport.postMessage({type:'chunk',id:'exp1',index:i,total:total,isLast:i===total-1,data:b64.slice(i*CH,(i+1)*CH),filename:outName});
+      window.webkit.messageHandlers.tendiesExport.postMessage({type:'end',id:'exp1',filename:outName});
+    } else { const a=document.createElement('a'); a.href=URL.createObjectURL(zip); a.download=outName; a.click(); }
+  }catch(e){ const a=document.createElement('a'); a.href=URL.createObjectURL(zip); a.download=outName; a.click(); }
+}
+$('btnDoExport').onclick=doExport;
+
+// ---- 导入 Tendies / .ca bundle：解析 ZIP（STORE 与 DEFLATE），还原图层，方便修改 ----
+async function unzipFiles(buf){
+  const dv=new DataView(buf);
+  // 先走中央目录：iOS/macOS 打的包常带 data descriptor，本地头里的压缩长度是 0，按本地头顺序读会错位丢图
+  let eocd=-1;
+  for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65557);i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  const readEntry=async (localOff, method, csize, name)=>{
+    if(localOff+30>buf.byteLength) return null;
+    const ldv=new DataView(buf, localOff, 30);
+    if(ldv.getUint32(0,true)!==0x04034b50) return null;
+    const nlen=ldv.getUint16(26,true), elen=ldv.getUint16(28,true);
+    const start=localOff+30+nlen+elen; const comp=new Uint8Array(buf,start,csize);
+    let data=comp;
+    if(method===8){
+      try{ const ds=new DecompressionStream('deflate-raw'); const stream=new Blob([comp]).stream().pipeThrough(ds); data=new Uint8Array(await new Response(stream).arrayBuffer()); }catch(e){}
+    }
+    return data;
+  };
+  if(eocd>=0){
+    const count=dv.getUint16(eocd+10,true); let off=dv.getUint32(eocd+16,true); const files={};
+    for(let k=0;k<count;k++){
+      if(off+46>buf.byteLength) break;
+      const cdv=new DataView(buf, off, 46);
+      if(cdv.getUint32(0,true)!==0x02014b50) break;
+      const method=cdv.getUint16(10,true), csize=cdv.getUint32(20,true), nlen=cdv.getUint16(28,true), elen=cdv.getUint16(30,true), clen=cdv.getUint16(32,true), localOff=cdv.getUint32(42,true);
+      const name=new TextDecoder().decode(new Uint8Array(buf,off+46,nlen));
+      if(name && !name.endsWith('/')){ const data=await readEntry(localOff, method, csize, name); if(data) files[name]=data; }
+      off+=46+nlen+elen+clen;
+    }
+    if(Object.keys(files).length) return files;
+  }
+  // 回退：旧顺序读法
+  const files={}; let off=0;
+  while(off+30<=buf.byteLength){
+    if(dv.getUint32(off,true)!==0x04034b50) break;
+    const method=dv.getUint16(off+8,true), csize=dv.getUint32(off+18,true), nlen=dv.getUint16(off+26,true), elen=dv.getUint16(off+28,true);
+    const name=new TextDecoder().decode(new Uint8Array(buf,off+30,nlen));
+    const start=off+30+nlen+elen; const comp=new Uint8Array(buf,start,csize);
+    let data=comp;
+    if(method===8){
+      try{ const ds=new DecompressionStream('deflate-raw'); const stream=new Blob([comp]).stream().pipeThrough(ds); data=new Uint8Array(await new Response(stream).arrayBuffer()); }catch(e){}
+    }
+    if(name && !name.endsWith('/')) files[name]=data;
+    off=start+csize;
+  }
+  return files;
+}
+function bytesToDataUrl(bytes, name){
+  let mime=null;
+  if(bytes && bytes.length>3){
+    if(bytes[0]===0xFF && bytes[1]===0xD8) mime='image/jpeg';
+    else if(bytes[0]===0x89 && bytes[1]===0x50) mime='image/png';
+    else if(bytes[0]===0x47 && bytes[1]===0x49) mime='image/gif';
+    else if(bytes[0]===0x52 && bytes[1]===0x49 && bytes[8]===0x57 && bytes[9]===0x45) mime='image/webp';
+  }
+  if(!mime){ const ext=(name.split('.').pop()||'jpg').toLowerCase(); mime=ext==='png'?'image/png':ext==='gif'?'image/gif':ext==='webp'?'image/webp':'image/jpeg'; }
+  let bin=''; for(let i=0;i<bytes.length;i+=8192) bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+8192));
+  return 'data:'+mime+';base64,'+btoa(bin);
+}
+function parseCamlLayers(xml, canvas, imgMap){
+  const layers=[];
+  const re=/<(CAEmitterLayer|CALayer)\b[^>]*>/g; let m;
+  while((m=re.exec(xml))!==null){
+    const tag=m[0]; const isEmitter=m[1]==='CAEmitterLayer';
+    const attr=n=>{ const mm=tag.match(new RegExp(n+'="([^"]*)"')); return mm?mm[1]:null; };
+    const nameRaw=attr('name')||'图层';
+    if(nameRaw==='Root Layer' || nameRaw==='CAPlayground Root Layer' || attr('id')==='__capRootLayer__') continue;
+    const posRaw=attr('position')||attr('frame')||'0,0';
+    const posParts=posRaw.split(/[,\s]+/).filter(s=>s!=='').map(Number);
+    const pos=posParts.length>=2?posParts.slice(0,2):[0,0];
+    const isReal=!!attr('bounds');
+    let sizeRaw=attr('size');
+    if(!sizeRaw && attr('bounds')){ const bp=attr('bounds').split(' ').map(Number); if(bp.length>=4) sizeRaw=bp[2]+','+bp[3]; }
+    if(!sizeRaw && posParts.length>=4) sizeRaw=posParts.slice(2,4).join(',');
+    if(!sizeRaw) sizeRaw='390,844';
+    const size=sizeRaw.split(/[,\s]+/).filter(s=>s!=='').map(Number);
+    const anc=(attr('anchor')||attr('anchorPoint')||'0.5,0.5').split(/[,\s]+/).filter(s=>s!=='').map(Number);
+    let src=attr('src')||attr('image')||attr('contents')||attr('file')||attr('asset')||'';
+    if(!src){
+      const after=xml.slice(re.lastIndex, re.lastIndex+400);
+      const cm=after.match(/<CGImage[^>]*src="([^"]*)"/);
+      if(cm) src=cm[1];
+    }
+    const name=nameRaw;
+    let x, y, w, h;
+    if(isReal){
+      // 真实 CAPlayground：坐标就是预览坐标，负数、超屏都是合法的三态起止位置，绝不按数值范围换算
+      x=pos[0]; y=pos[1]; w=size[0]; h=size[1];
+    } else if(pos[0]<0 || pos[1]<0){
+      x=pos[0]/1290*390+195; y=422-pos[1]/2796*844; w=size[0]/1290*390; h=size[1]/2796*844;
+    } else if(size[0]>1000 || size[1]>1000 || pos[0]>600 || pos[1]>1000){
+      x=pos[0]/1290*390; y=pos[1]/2796*844; w=size[0]/1290*390; h=size[1]/2796*844;
+    } else if(size[0]>450 || size[1]>1000){
+      x=pos[0]/430*390; y=pos[1]/932*844; w=size[0]/430*390; h=size[1]/932*844;
+    } else {
+      x=pos[0]; y=pos[1]; w=size[0]; h=size[1];
+    }
+    let dataUrl='';
+    if(src){
+      const base=src.split('/').pop().split('\\').pop();
+      const key=Object.keys(imgMap).find(k=>k.endsWith(base));
+      if(key) dataUrl=bytesToDataUrl(imgMap[key], key);
+    }
+    if(!dataUrl){
+      const stripped=name.replace(/(\s+1)+$/,'').split('/').pop();
+      const key=Object.keys(imgMap).find(k=>k.endsWith(stripped));
+      if(key) dataUrl=bytesToDataUrl(imgMap[key], key);
+    }
+    const strippedName=name.replace(/(\s+1)+$/,'');
+    const isImg = !!dataUrl || /\.(png|jpg|jpeg|gif|webp|heic)$/i.test(strippedName);
+    let bgColor='transparent';
+    const bc=attr('backgroundColor');
+    if(bc){ const parts=bc.split(/\s+/).map(Number); if(parts.length>=3) bgColor='#'+parts.slice(0,3).map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join(''); }
+    const rotRaw=attr('transform.rotation.z')||attr('rotation')||'0';
+    layers.push({id:nid(), camlId:attr('id')||'', name:name, type:isEmitter?'emitter':(isImg?'image':'text'), canvas:canvas, x:x, y:y, w:Math.max(20,w), h:Math.max(20,h), scale:1, rot:Number(rotRaw)||0, op:Number(attr('opacity')||1), anchorX:anc[0], anchorY:anc[1], flip:false, visible:true, blend:'', radius:0, clip:false, bgColor:bgColor, bgOp:1, borderColor:'#000000', borderW:'', unlockDy:60, unlockOp:100, sleepOp:35, anim:'none', text:name, dataUrl:dataUrl});
+  }
+  // 三态全解析：基础位置不动，各态值存进 l.states，切换状态时按态显示（网页版就是这样动）
+  const stateVals={};
+  const sm=/<LKState name="([^"]+)">([\s\S]*?)<\/LKState>/g; let sm2;
+  while((sm2=sm.exec(xml))!==null){
+    const vm=/<LKStateSetValue targetId="([^"]*)" keyPath="([^"]*)">[\s\S]*?<value[^>]*value="([^"]*)"/g; let vm2;
+    while((vm2=vm.exec(sm2[2]))!==null){ ((stateVals[vm2[1]]=stateVals[vm2[1]]||{})[sm2[1]]=stateVals[vm2[1]][sm2[1]]||{})[vm2[2]]=Number(vm2[3]); }
+  }
+  layers.forEach(l=>{
+    const v=stateVals[l.camlId]; if(!v) return; l.states={};
+    Object.keys(v).forEach(sn=>{
+      const e={}; const vv=v[sn];
+      if(vv['position.x']!==undefined) e.x=vv['position.x'];
+      if(vv['position.y']!==undefined) e.y=vv['position.y'];
+      if(vv['bounds.size.width']!==undefined) e.w=Math.max(20,vv['bounds.size.width']);
+      if(vv['bounds.size.height']!==undefined) e.h=Math.max(20,vv['bounds.size.height']);
+      if(vv['opacity']!==undefined) e.op=vv['opacity'];
+      if(Object.keys(e).length) l.states[sn]=e;
+    });
+  });
+  return layers;
+}
+function applyImportFiles(names, files, displayName){
+    const imgMap={}; names.forEach(n=>{ const b=files[n]; const isImg=/\.(jpg|jpeg|png|gif|webp|heic|heif|tiff|bmp)$/i.test(n) || (b && b.length>3 && ((b[0]===0xFF&&b[1]===0xD8)||(b[0]===0x89&&b[1]===0x50)||(b[0]===0x47&&b[1]===0x49)||(b[0]===0x52&&b[1]===0x49))); if(isImg) imgMap[n]=files[n]; });
+    let layers=[];
+    const camlKeys=names.filter(n=>n.toLowerCase().endsWith('main.caml'));
+    camlKeys.forEach(k=>{
+      const xml=new TextDecoder().decode(files[k]);
+      const canvas=(k.indexOf('Floating')>=0||k.indexOf('Foreground')>=0)?'floating':k.indexOf('Wallpaper')>=0?'floating':'background';
+      if(k.indexOf('Wallpaper')>=0){
+        const bgLayers=parseCamlLayers(xml,'background',imgMap).filter(l=>l.dataUrl && l.name.toLowerCase().indexOf('float')<0);
+        layers=layers.concat(bgLayers);
+      } else {
+        layers=layers.concat(parseCamlLayers(xml,canvas,imgMap));
+      }
+    });
+    // 去重：同一名字、画布、位置、大小、图片的层只留一份（多版本 caml 重复解析的产物）
+    const seen=new Set(); layers=layers.filter(l=>{ const k=[l.name,l.canvas,Math.round(l.x),Math.round(l.y),Math.round(l.w),Math.round(l.h),l.dataUrl?l.dataUrl.slice(0,80):''].join('|'); if(seen.has(k)) return false; seen.add(k); return true; });
+    const used=new Set(); layers.forEach(l=>{ if(l.dataUrl) used.add(l.dataUrl); });
+    const unusedImgs=Object.keys(imgMap).filter(k=>!used.has(bytesToDataUrl(imgMap[k], k)));
+    let ui=0; layers.forEach(l=>{ if(!l.dataUrl && l.type==='image' && ui<unusedImgs.length){ l.dataUrl=bytesToDataUrl(imgMap[unusedImgs[ui]], unusedImgs[ui]); ui++; } });
+    if(!layers.length && Object.keys(imgMap).length){
+      const imgs=Object.keys(imgMap);
+      layers.push({id:nid(), name:'背景图', type:'image', canvas:'background', x:195, y:422, w:390, h:844, scale:1, rot:0, op:1, anchorX:0.5, anchorY:0.5, flip:false, visible:true, blend:'', radius:0, clip:false, bgColor:'transparent', bgOp:1, borderColor:'#000000', borderW:'', unlockDy:60, unlockOp:100, sleepOp:35, anim:'none', text:'', dataUrl:bytesToDataUrl(imgMap[imgs[0]], imgs[0])});
+      if(imgs[1]) layers.push({id:nid(), name:'前景图', type:'image', canvas:'floating', x:195, y:422, w:390, h:844, scale:1, rot:0, op:1, anchorX:0.5, anchorY:0.5, flip:false, visible:true, blend:'', radius:0, clip:false, bgColor:'transparent', bgOp:1, borderColor:'#000000', borderW:'', unlockDy:60, unlockOp:100, sleepOp:35, anim:'none', text:'', dataUrl:bytesToDataUrl(imgMap[imgs[1]], imgs[1])});
+    }
+    if(!layers.length){ $('msg').textContent='导入失败：包里没找到图层（main.caml）或图片。'; return; }
+    project.layers=layers; project.name=displayName.replace(/\.(tendies|zip)$/i,''); project.gyro=names.some(n=>n.indexOf('Wallpaper.ca')>=0);
+    selectedId=layers[0].id; saveHistory(); scheduleSave(); renderLayers();
+    const noImg=layers.filter(l=>l.type==='image' && !l.dataUrl);
+    const hasStates=layers.some(l=>l.states && Object.keys(l.states).length); project.state='Locked';
+    $('msg').textContent='已导入 '+displayName+'，共 '+layers.length+' 个图层'+(hasStates?'（含锁定/解锁/睡眠三态，点左栏状态或画布底部可切换预览）':'')+'，包里图片 '+Object.keys(imgMap).length+' 张'+(noImg.length?'，未配上图 '+noImg.length+' 层：'+noImg.map(l=>l.name).slice(0,5).join('、')+'（双击该层文件名 → 选择图片可手动补图）':'')+'，可直接修改再导出。';
+}
+async function doImportTendies(file){
+  try{
+    const buf=await file.arrayBuffer();
+    const head=new TextDecoder().decode(new Uint8Array(buf.slice(0,8)));
+    if(head.indexOf('WALLIVE1')===0){ $('msg').textContent='导入失败：这是 Wallive 加密包，CAPlayground 打不开，只能用来源 App 打开。'; return; }
+    const files=await unzipFiles(buf);
+    const names=Object.keys(files);
+    if(!names.length){ $('msg').textContent='导入失败：不是 ZIP / Tendies 包。'; return; }
+    applyImportFiles(names, files, file.name);
+  }catch(e){ $('msg').textContent='导入失败：'+e.message; }
+}
+async function doImportFolder(fileList){
+  try{
+    // 文件夹里直接放着 .tendies 文件（最常见）：先解开第一个导入
+    const tendiesFiles=[...fileList].filter(f=>/\.(tendies|zip)$/i.test(f.name));
+    if(tendiesFiles.length){
+      await doImportTendies(tendiesFiles[0]);
+      if(tendiesFiles.length>1 && $('msg').textContent.indexOf('已导入')>=0) $('msg').textContent+='（文件夹里还有 '+(tendiesFiles.length-1)+' 个 .tendies 未导入，要导其他的请用 Import 直接选那个文件。）';
+      return;
+    }
+    const files={}; const names=[];
+    for(const f of fileList){
+      const key=f.webkitRelativePath||f.name; names.push(key);
+      files[key]=new Uint8Array(await f.arrayBuffer());
+    }
+    if(!names.length){ $('msg').textContent='导入失败：文件夹是空的。'; return; }
+    if(!names.some(n=>n.toLowerCase().endsWith('.caml')) && !names.some(n=>/\.(jpg|jpeg|png)$/i.test(n))){ $('msg').textContent='导入失败：文件夹里没找到 main.caml 或图片。'; return; }
+    applyImportFiles(names, files, fileList[0].webkitRelativePath.split('/')[0]||'导入文件夹');
+  }catch(e){ $('msg').textContent='导入失败：'+e.message; }
+}
+$('fileTendies').onchange=e=>{ const f=e.target.files[0]; if(f){
+  if(/\.caml$/i.test(f.name)){ $('msg').textContent='你选的是文件夹里的单个文件，iOS 不给这样导：请返回上一级直接选 .tendies 文件本身，或点「导入文件夹」选整个文件夹。'; }
+  else doImportTendies(f);
+} e.target.value=''; };
+$('fileFolder').onchange=e=>{ const fs=e.target.files; if(fs && fs.length) doImportFolder(fs); e.target.value=''; };
+
+// ---- 主界面 Your Projects：项目列表、搜索、Import（右上角）、New Project、Open Project ----
+let projects=[]; let homeViewMode='grid'; let homeSelectMode=false; let homeSelected=new Set();
+function loadProjects(){ try{ const s=localStorage.getItem('cap-replica-projects'); if(s){ projects=JSON.parse(s); return; } }catch(e){} const cur=localStorage.getItem('cap-replica-project'); if(cur){ try{ const cp=JSON.parse(cur); if(cp&&Array.isArray(cp.layers)) projects=[{id:'p1',name:cp.name||'壁纸项目',created:new Date().toLocaleDateString(),data:cp}]; }catch(e){} } }
+function saveProjects(){ try{ localStorage.setItem('cap-replica-projects', JSON.stringify(projects)); }catch(e){} }
+function thumbFor(proj){ const bg=(proj.data.layers||[]).find(l=>l.dataUrl); return bg?bg.dataUrl:''; }
+function renderHome(){
+  const q=($('homeSearch').value||'').toLowerCase();
+  const list=projects.filter(x=>x.name.toLowerCase().includes(q));
+  $('homeCount').textContent=list.length;
+  $('homeEmpty').style.display=list.length?'none':'block';
+  $('homeCards').style.display=homeViewMode==='grid'?'grid':'block';
+  $('homeCards').innerHTML='';
+  list.forEach(proj=>{
+    const card=document.createElement('div'); card.style.cssText='background:#111;border:1px solid #222;border-radius:16px;padding:12px;margin-bottom:12px';
+    const thumb=thumbFor(proj);
+    card.innerHTML='<div style="height:240px;background:#000;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">'+(thumb?'<img src="'+thumb+'" style="width:100%;height:100%;object-fit:cover">':'<span style="color:#666">无预览</span>')+'</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>'+proj.name+'</b><button class="homeMenu" style="background:none;border:0;color:#fff;font-size:18px">⋮</button></div><div style="color:#888;font-size:13px">Created: '+proj.created+'</div><div style="color:#888;font-size:13px">💾 Saved to Device</div><button class="homeOpen" style="width:100%;margin-top:10px;padding:10px;border:0;border-radius:10px;background:#fff;color:#000">Open Project →</button>'+(homeSelectMode?'<label style="display:block;margin-top:8px"><input type="checkbox" class="homeSel"> 选择</label>':'');
+    card.querySelector('.homeOpen').onclick=()=>openProject(proj.id);
+    card.querySelector('.homeMenu').onclick=()=>{
+      const act=prompt('项目菜单：输入 rename 改名 / delete 删除 / duplicate 复制', 'rename');
+      if(act==='rename'){ const n=prompt('新名字', proj.name); if(n){ proj.name=n; saveProjects(); renderHome(); } }
+      else if(act==='delete'){ if(confirm('删除 '+proj.name+'？')){ projects=projects.filter(x=>x.id!==proj.id); saveProjects(); renderHome(); } }
+      else if(act==='duplicate'){ projects.push({id:nid(),name:proj.name+' 副本',created:new Date().toLocaleDateString(),data:JSON.parse(JSON.stringify(proj.data))}); saveProjects(); renderHome(); }
+    };
+    const selBox=card.querySelector('.homeSel'); if(selBox) selBox.onchange=e=>{ e.target.checked?homeSelected.add(proj.id):homeSelected.delete(proj.id); $('homeSelCount').textContent='已选 '+homeSelected.size+' 个'; };
+    $('homeCards').appendChild(card);
+  });
+}
+function showHome(){ $('homeView').style.display='block'; renderHome(); }
+function openProject(id){ const proj=projects.find(x=>x.id===id); if(!proj) return; project=JSON.parse(JSON.stringify(proj.data)); project.name=proj.name; selectedId=null; $('btnProj').textContent=proj.name+' ▾'; if($('expName')) $('expName').value=proj.name; $('homeView').style.display='none'; saveHistory(); scheduleSave(); renderLayers(); }
+function saveCurrentToProjects(){ const idx=projects.findIndex(x=>x.data && x.name===project.name); const entry={id:idx>=0?projects[idx].id:nid(),name:project.name,created:idx>=0?projects[idx].created:new Date().toLocaleDateString(),data:JSON.parse(JSON.stringify(project))}; if(idx>=0) projects[idx]=entry; else projects.unshift(entry); saveProjects(); }
+$('homeSearch').oninput=renderHome;
+$('homeGrid').onclick=()=>{ homeViewMode='grid'; renderHome(); };
+$('homeList').onclick=()=>{ homeViewMode='list'; renderHome(); };
+$('homeSelect').onclick=()=>{ homeSelectMode=!homeSelectMode; homeSelected.clear(); $('homeDeleteBar').style.display=homeSelectMode?'block':'none'; renderHome(); };
+$('homeDeleteSel').onclick=()=>{ projects=projects.filter(x=>!homeSelected.has(x.id)); homeSelected.clear(); saveProjects(); renderHome(); };
+$('homeNew').onclick=()=>{ project={name:'新项目',activeCanvas:'floating',showBg:true,gyro:false,gyroAmp:50,state:'Locked',layers:[],theme:'dark'}; selectedId=null; $('homeView').style.display='none'; saveHistory(); scheduleSave(); renderLayers(); };
+$('homeImport').onclick=()=>$('fileTendies').click();
+$('homeImportFolder').onclick=()=>$('fileFolder').click();
+$('homeBack').onclick=()=>{ $('homeView').style.display='none'; };
+$('btnBack').onclick=showHome;
+// 导入后自动存为项目并打开编辑器：包装原 doImportTendies 的收尾
+const _origImport = doImportTendies;
+doImportTendies = async function(file){
+  await _origImport(file);
+  // 只有成功导入（msg 含已导入）才存卡片并打开编辑器
+  if($('msg').textContent.indexOf('已导入')>=0){ saveCurrentToProjects(); $('homeView').style.display='none'; }
+};
+loadProjects(); renderHome(); if(location.hash==='#editor' || location.search.indexOf('view=editor')>=0){ $('homeView').style.display='none'; }
+// ---- 时钟 / 初始化 ----
+function nowClock(){ const d=new Date(); $('clockTime').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); $('sbLeft').textContent=$('clockTime').textContent; $('clockDate').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日'; }
+nowClock(); setInterval(nowClock,30000);
+loadProject(); saveHistory(); renderLayers(); fitPhone(); setTimeout(fitPhone,100);
+window.addEventListener('load', fitPhone);
+</script>
+</body>
+</html>
