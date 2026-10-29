@@ -50,9 +50,7 @@ button:disabled{opacity:.4} .row{display:flex;gap:8px} .row button{flex:1;paddin
 </style>
 </head>
 <body>
-<h1>交互壁纸编辑器 v8</h1>
-<p class="note">全套交互版：不再只是静态深景。前景有锁屏 / 解锁 / 睡眠三态、循环关键帧动画、文字、渐变、粒子，还可以开陀螺仪视差模式。导出 .tendies，用 Pocket Poster / Nugget 装 iPhone。本页不走 OPFS、不走 IndexedDB，图片只留内存，iPad Safari 也能用。</p>
-<div class="topbar"><span>交互壁纸编辑器 v8</span><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#ccc;margin:0">中间大小 <input type="range" id="midSize" min="30" max="100" value="65" style="width:140px;min-height:20px"> <span id="midSizeVal">65%</span></label><button id="exportTop">导出 .tendies</button></div>
+<div class="topbar"><button id="importBgTop" type="button" style="background:#333">导入背景图</button><button id="importFgTop" type="button" style="background:#333">导入前景图</button><label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#ccc;margin:0">中间大小 <input type="range" id="midSize" min="30" max="100" value="65" style="width:140px;min-height:20px"> <span id="midSizeVal">65%</span></label><button id="exportTop">导出 .tendies</button></div>
 <div class="wrap">
   <div class="leftpanel"><h3>图层</h3>
     <button type="button" id="layerBg">背景图</button>
@@ -452,13 +450,32 @@ async function exportTendies(){
       if($('txt').value) { /* text needs no asset */ }
       out=await zip.generateAsync({type:'blob'});
     }
-    const a=document.createElement('a'); a.href=URL.createObjectURL(out); a.download=name+'.tendies'; a.click();
+    // 先走原生桥（App 里会弹分享单，选“存储到文件”后文件就在“文件”App 里，不会丢）；
+    // 桥不存在时（纯浏览器打开）再回退到 <a download>。
+    try{
+      const buf=await out.arrayBuffer();
+      let bin=''; const bytes=new Uint8Array(buf);
+      for(let i=0;i<bytes.length;i+=8192){ bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+8192)); }
+      const b64=btoa(bin);
+      if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tendiesExport){
+        const CH=60000; const total=Math.ceil(b64.length/CH);
+        window.webkit.messageHandlers.tendiesExport.postMessage({type:'start',id:'exp1',filename:name+'.tendies',total:total});
+        for(let i=0;i<total;i++){ window.webkit.messageHandlers.tendiesExport.postMessage({type:'chunk',id:'exp1',index:i,total:total,isLast:i===total-1,data:b64.slice(i*CH,(i+1)*CH),filename:name+'.tendies'}); }
+        window.webkit.messageHandlers.tendiesExport.postMessage({type:'end',id:'exp1',filename:name+'.tendies'});
+      } else {
+        const a=document.createElement('a'); a.href=URL.createObjectURL(out); a.download=name+'.tendies'; a.click();
+      }
+    }catch(e){
+      const a=document.createElement('a'); a.href=URL.createObjectURL(out); a.download=name+'.tendies'; a.click();
+    }
     setTimeout(()=>URL.revokeObjectURL(a.href),5000);
     msg.textContent='已导出 '+name+'.tendies（'+($('gyro').checked?'视差模式':'分层模式')+'），请传到 iPhone 用 Pocket Poster / Nugget 导入，真机上验证三态和动画。';
   }catch(err){ $('msg').textContent='导出失败：'+(err&&err.message?err.message:err)+'。请刷新后重试。'; }
 }
 $('exportBtn').addEventListener('click', exportTendies);
 $('exportTop').addEventListener('click', exportTendies);
+  $('importBgTop').addEventListener('click', ()=>$('bgFile').click());
+  $('importFgTop').addEventListener('click', ()=>$('fgFile').click());
 $('midSize').addEventListener('input', e=>{ previewScale=e.target.value/100; $('midSizeVal').textContent=e.target.value+'%'; fitPhone(); });
 (function(){
   const handle=$('resizeHandle'); if(!handle) return;
