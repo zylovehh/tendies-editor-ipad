@@ -95,8 +95,8 @@ struct WebView: UIViewRepresentable {
             }
             // App 本地储存直供图：cap://app/local/<项目号>/<文件路径>
             // 从 Documents/tendies-local 取文件、按扩展名给正确类型，不走浏览器存储和 blob。
-            if path.hasPrefix("/local/") {
-                let rel = String(path.dropFirst("/local/".count))
+            if url.path.hasPrefix("/local/") {
+                let rel = String(url.path.dropFirst("/local/".count))
                 let parts = rel.split(separator: "/").map { String($0) }
                 if parts.count >= 2 {
                     let projectId = parts[0]
