@@ -45,7 +45,8 @@ struct WebView: UIViewRepresentable {
         // 网页侧按这个名字找，拼写差一个字母网页就会判定桥不存在而走回退路。
         config.userContentController.add(context.coordinator, name: "tendiesExport")
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: UIScreen.main.bounds, configuration: config)
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         // 画布手势不被滚动视图抢走：编辑器面板自身的滚动不受影响，

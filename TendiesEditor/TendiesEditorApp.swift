@@ -7,6 +7,7 @@ struct TendiesEditorApp: App {
     var body: some Scene {
         WindowGroup {
             WebView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea()
         }
     }
