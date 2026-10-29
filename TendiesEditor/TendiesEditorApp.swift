@@ -6,9 +6,11 @@ import SwiftUI
 struct TendiesEditorApp: App {
     var body: some Scene {
         WindowGroup {
-            WebView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea()
+            GeometryReader { geo in
+                WebView()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .ignoresSafeArea()
+            }
         }
     }
 }
