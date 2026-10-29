@@ -52,6 +52,8 @@ struct WebView: UIViewRepresentable {
         // 画布手势不被滚动视图抢走：编辑器面板自身的滚动不受影响，
         // 画布元素在网页里已用 touch-action: none 接管拖动和捏合。
         webView.scrollView.bounces = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInset = .zero
         // loadFileURL 的读权限只给 index.html 所在的 Bundle 目录。
         if let url = Bundle.main.url(forResource: "index", withExtension: "html") {
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
