@@ -37,8 +37,9 @@ struct WebView: UIViewRepresentable {
         config.preferences.javaScriptEnabled = true
         // 本地文件访问：index.html 在 Bundle 里，JSZip 也是本地文件，
         // 导出 .tendies 时 JS 要读写内存里的图片数据，不走网络。
-        config.setValue(true, forKey: "allowFileAccessFromFileURLs")
-        config.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
+        // 本地文件访问靠下面 loadFileURL 的 allowingReadAccessTo（Bundle 目录）实现，
+        // 不再用 setValue 私有键：WKWebViewConfiguration 在新系统上对这两个键不是 KVC 兼容，
+        // 启动时直接抛异常闪退，之前 iPhone 点开闪退最可能就是这两行。
         // 原生消息桥必须在 loadFileURL 之前注册，否则网页加载时发的第一条
         // 消息会因为桥还没注册而丢掉。名字必须 exactly 是 tendiesExport，
         // 网页侧按这个名字找，拼写差一个字母网页就会判定桥不存在而走回退路。
