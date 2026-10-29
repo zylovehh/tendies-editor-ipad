@@ -45,7 +45,7 @@ struct WebView: UIViewRepresentable {
         // 网页侧按这个名字找，拼写差一个字母网页就会判定桥不存在而走回退路。
         config.userContentController.add(context.coordinator, name: "tendiesExport")
 
-        let webView = WKWebView(frame: UIScreen.main.bounds, configuration: config)
+        let webView = WKWebView(frame: .zero, configuration: config)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
@@ -62,7 +62,13 @@ struct WebView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        // 静态页面，不需要刷新。
+        // 横屏全屏关键：不要用启动时的 UIScreen 尺寸，始终铺满父视图（窗口）。
+        // SwiftUI 的 UIViewRepresentable 在旋转时不会自动改 frame，这里强制跟父视图走。
+        if let parent = uiView.superview, uiView.frame != parent.bounds {
+            uiView.frame = parent.bounds
+            uiView.scrollView.frame = uiView.bounds
+        }
+        uiView.scrollView.contentInset = .zero
     }
 
     func makeCoordinator() -> Coordinator {
