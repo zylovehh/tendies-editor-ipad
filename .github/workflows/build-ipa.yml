@@ -8,21 +8,9 @@ on:
 
 jobs:
   build:
-    # 老 Xcode 版：不用 macos-latest（会解析到 macOS 26 + Xcode 26.6）。
-    # 没选 macos-14：该镜像 2026-11-02 退役，2026 年 10 月正处停服窗口期，
-    # 容量缩减、排队变长，且 11 月 2 日后任何 GitHub 托管镜像都不再带 Xcode 15，
-    # 现在用它编出来的包 4 天后就无法复现。macos-15 是目前仍可用的最老镜像，
-    # 其上最老的 Xcode 是 16.0（默认 16.4），SDK 是 iOS 18 时代，比 iOS 26.5 SDK
-    # 更接近目标设备 iPadOS 18.7.8。
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Select Xcode 16.0
-        run: |
-          ls /Applications | grep -i Xcode
-          sudo xcode-select -s /Applications/Xcode_16.0.app
-          xcodebuild -version
 
       - name: Show Xcode version
         run: xcodebuild -version
