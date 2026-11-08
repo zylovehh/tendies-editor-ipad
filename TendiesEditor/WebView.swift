@@ -376,8 +376,9 @@ struct WebView: UIViewRepresentable {
         //   data / chunk / base64: 本块的 base64 字符串（可含换行，解码时忽略空白）
         // 假设 B：块按 index 排序拼包，同一 index 重复发只保留第一次收到的（去重），
         //   拼包时 index 必须连续（0..<total 或 0...lastIndex），缺块即报错不拼包。
-        // 假设 C：拼好的数据就是 .tendies 文件本身（zip 格式），文件头应为 PK\x03\x04；
-        //   不是 zip 头的数据会被当作导出失败处理，不会直接拿去分享。
+        // 假设 C：拼好的数据就是 .tendies 文件本身，可能是 zip 格式（文件头 PK\x03\x04），
+        //   也可能是 WALLIVE1 加密包（文件头 "WALLIVE1"，网页侧导出时加密）；两种都放行，
+        //   不是这两种头的数据会被当作导出失败处理，不会直接拿去分享。
         // 假设 D："start" 表示一次新导出开始，会丢弃同 id 未完成旧传输；"error" 带
         //   message 字段时直接弹中文提示并丢弃该传输；"complete" 且 data 为完整
         //   base64 时直接按单块拼包分享。
@@ -708,11 +709,14 @@ struct WebView: UIViewRepresentable {
                 }
                 assembled.append(chunk)
             }
-            // .tendies 本质是 zip 包，文件头应为 PK\x03\x04；不是则当失败处理，
-            // 不要把一包坏数据拿去分享给用户装机。
+            // .tendies 可以是 zip 包（文件头 PK\x03\x04），也可以是 WALLIVE1 加密包
+            // （文件头 "WALLIVE1"，网页侧导出时加密）；两种都放行，不是这两种
+            // 才当失败处理，不要把一包坏数据拿去分享给用户装机。
             let zipMagic: [UInt8] = [0x50, 0x4B, 0x03, 0x04]
-            guard assembled.count >= 4,
-                  Array(assembled.prefix(4)) == zipMagic else {
+            let wallive1Magic: [UInt8] = [0x57, 0x41, 0x4C, 0x4C, 0x49, 0x56, 0x45, 0x31]
+            let isZip = assembled.count >= 4 && Array(assembled.prefix(4)) == zipMagic
+            let isWallive1 = assembled.count >= 8 && Array(assembled.prefix(8)) == wallive1Magic
+            guard isZip || isWallive1 else {
                 showBridgeError("导出的数据不是有效的壁纸包，请再点一次“导出 .tendies”。")
                 return
             }
