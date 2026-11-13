@@ -1,1 +1,44 @@
-aW1wb3J0IFN3aWZ0VUkKCi8vIEFwcCDlhaXlj6PvvJrmlbTkuKrnlYzpnaLlsLHmmK/kuIDkuKrlhajlsY8gV0tXZWJWaWV377yM6KeBIFdlYlZpZXcuc3dpZnTjgIIKLy8g5LmL5YmN55SoIEdlb21ldHJ5UmVhZGVyICsgLmZyYW1lKGdlbykg5Lya5Zyo5ZCv5Yqo5pe25oyJ56uW5bGP5bC65a+45a6a5L2P77yM5a+86Ie05qiq5bGP5ZCO5Y+z5L6n55WZ6buR5p2h44CCCi8vIOeOsOWcqOebtOaOpeiuqSBXZWJWaWV3IOmTuua7oeeql+WPo+W5tuW/veeVpeWuieWFqOWMuu+8jOWwuuWvuOeUseezu+e7n+eql+WPo+WGs+Wumu+8jOS4jeWGjeeUqOWQr+WKqOaXtueahCBVSVNjcmVlbiDlsLrlr7jjgIIKCi8vIOWIhuS6q+i/m+adpeeahCAudGVuZGllcyDmlofku7bvvJrnlKjmiLflnKjigJzmlofku7bigJ3miJbliKvlpITliIbkuqsgLnRlbmRpZXMg5Yiw5aOB57q45Z2K5pe277yMCi8vIOezu+e7n+e7jyBvbk9wZW5VUkwg5oqK5paH5Lu2IFVSTCDkuqTnu5kgQXBw77yb6L+Z6YeM6K+75Ye65pWw5o2u5Lqk57uZIFdlYlZpZXfvvIwKLy8g55SxIFdlYlZpZXcg6L2s57uZ572R6aG16YeM55qEIF9fbmF0aXZlSW1wb3J0VGVuZGllcyDlr7zlhaXmiJDmlrDpobnnm67jgIIKLy8g5Y+q5o6l5Y+XIC50ZW5kaWVz77yIemlwIOaIliBXQUxMSVZFMSDliqDlr4bljIXpg73ooYzvvIznvZHpobXkvqcgdW5wYWNrVGVuZGllcyDkvJrlpITnkIbvvInjgIIKZmluYWwgY2xhc3MgSW5jb21pbmdGaWxlU3RvcmU6IE9ic2VydmFibGVPYmplY3QgewogICAgc3RydWN0IFBlbmRpbmdJbXBvcnQgewogICAgICAgIGxldCBkYXRhOiBEYXRhCiAgICAgICAgbGV0IGZpbGVuYW1lOiBTdHJpbmcKICAgIH0KICAgIEBQdWJsaXNoZWQgdmFyIHBlbmRpbmc6IFBlbmRpbmdJbXBvcnQ/CgogICAgZnVuYyBoYW5kbGVJbmNvbWluZ1VSTChfIHVybDogVVJMKSB7CiAgICAgICAgZ3VhcmQgdXJsLnBhdGhFeHRlbnNpb24ubG93ZXJjYXNlZCgpID09ICJ0ZW5kaWVzIiBlbHNlIHsgcmV0dXJuIH0KICAgICAgICBndWFyZCB1cmwuc3RhcnRBY2Nlc3NpbmdTZWN1cml0eVNjb3BlZFJlc291cmNlKCkgZWxzZSB7IHJldHVybiB9CiAgICAgICAgZGVmZXIgeyB1cmwuc3RvcEFjY2Vzc2luZ1NlY3VyaXR5U2NvcGVkUmVzb3VyY2UoKSB9CiAgICAgICAgZ3VhcmQgbGV0IGRhdGEgPSB0cnk/IERhdGEoY29udGVudHNPZjogdXJsKSwgIWRhdGEuaXNFbXB0eSBlbHNlIHsgcmV0dXJuIH0KICAgICAgICBsZXQgZmlsZW5hbWUgPSB1cmwubGFzdFBhdGhDb21wb25lbnQuaXNFbXB0eSA/ICJ3YWxscGFwZXIudGVuZGllcyIgOiB1cmwubGFzdFBhdGhDb21wb25lbnQKICAgICAgICAvLyDkuLvnur/nqIvmlLkgQFB1Ymxpc2hlZO+8jOmBv+WFjeWQjuWPsOe6v+eoi+aUuSBVSSDnirbmgIHjgIIKICAgICAgICBEaXNwYXRjaFF1ZXVlLm1haW4uYXN5bmMgeyBbd2VhayBzZWxmXSBpbgogICAgICAgICAgICBzZWxmPy5wZW5kaW5nID0gUGVuZGluZ0ltcG9ydChkYXRhOiBkYXRhLCBmaWxlbmFtZTogZmlsZW5hbWUpCiAgICAgICAgfQogICAgfQp9CgpAbWFpbgpzdHJ1Y3QgVGVuZGllc0VkaXRvckFwcDogQXBwIHsKICAgIEBTdGF0ZU9iamVjdCBwcml2YXRlIHZhciBpbmNvbWluZ0ZpbGUgPSBJbmNvbWluZ0ZpbGVTdG9yZSgpCgogICAgdmFyIGJvZHk6IHNvbWUgU2NlbmUgewogICAgICAgIFdpbmRvd0dyb3VwIHsKICAgICAgICAgICAgV2ViVmlldyhpbmNvbWluZ0ZpbGU6IGluY29taW5nRmlsZSkKICAgICAgICAgICAgICAgIC5pZ25vcmVzU2FmZUFyZWEoLmFsbCwgZWRnZXM6IC5hbGwpCiAgICAgICAgICAgICAgICAub25PcGVuVVJMIHsgdXJsIGluCiAgICAgICAgICAgICAgICAgICAgaW5jb21pbmdGaWxlLmhhbmRsZUluY29taW5nVVJMKHVybCkKICAgICAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cn0K
+import SwiftUI
+
+// App 入口：整个界面就是一个全屏 WKWebView，见 WebView.swift。
+// 之前用 GeometryReader + .frame(geo) 会在启动时按竖屏尺寸定住，导致横屏后右侧留黑条。
+// 现在直接让 WebView 铺满窗口并忽略安全区，尺寸由系统窗口决定，不再用启动时的 UIScreen 尺寸。
+
+// 分享进来的 .tendies 文件：用户在“文件”或别处分享 .tendies 到壁纸坊时，
+// 系统经 onOpenURL 把文件 URL 交给 App；这里读出数据交给 WebView，
+// 由 WebView 转给网页里的 __nativeImportTendies 导入成新项目。
+// 只接受 .tendies（zip 或 WALLIVE1 加密包都行，网页侧 unpackTendies 会处理）。
+final class IncomingFileStore: ObservableObject {
+    struct PendingImport {
+        let data: Data
+        let filename: String
+    }
+    @Published var pending: PendingImport?
+
+    func handleIncomingURL(_ url: URL) {
+        guard url.pathExtension.lowercased() == "tendies" else { return }
+        guard url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return }
+        let filename = url.lastPathComponent.isEmpty ? "wallpaper.tendies" : url.lastPathComponent
+        // 主线程改 @Published，避免后台线程改 UI 状态。
+        DispatchQueue.main.async { [weak self] in
+            self?.pending = PendingImport(data: data, filename: filename)
+        }
+    }
+}
+
+@main
+struct TendiesEditorApp: App {
+    @StateObject private var incomingFile = IncomingFileStore()
+
+    var body: some Scene {
+        WindowGroup {
+            WebView(incomingFile: incomingFile)
+                .ignoresSafeArea(.all, edges: .all)
+                .onOpenURL { url in
+                    incomingFile.handleIncomingURL(url)
+                }
+        }
+    }
+}
