@@ -31,6 +31,8 @@ final class IncomingFileStore: ObservableObject {
 @main
 struct TendiesEditorApp: App {
     @StateObject private var incomingFile = IncomingFileStore()
+    // 检查更新用的远端版本号：打开 App 就拉 version.json 比一次，有新版弹提示框。
+    @State private var remoteVersion: RemoteVersion?
 
     var body: some Scene {
         WindowGroup {
@@ -39,6 +41,10 @@ struct TendiesEditorApp: App {
                 .onOpenURL { url in
                     incomingFile.handleIncomingURL(url)
                 }
+                .task {
+                    remoteVersion = await UpdateChecker.checkForUpdate()
+                }
+                .updateAlert(remote: $remoteVersion)
         }
     }
 }
