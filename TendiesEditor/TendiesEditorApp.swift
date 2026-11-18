@@ -72,8 +72,8 @@ private struct VersionFile: Decodable {
 enum UpdateChecker {
     /// 本版的对外版本号（下载页/version.json 里 editor 那节的号）。
     /// 发新版时这里和 version.json 一起 +0.1，不然新版装上还会弹“有新版本”。
-    static let localTag = "V1.4"
-    static let localNumber = 1.4
+    static let localTag = "V1.5"
+    static let localNumber = 1.5
 
     /// 下载页上的 version.json 地址。
     static let versionURL = URL(string: "https://zylovehh.github.io/wallive-clone/version.json")!
