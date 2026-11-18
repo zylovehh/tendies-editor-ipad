@@ -72,13 +72,13 @@ private struct VersionFile: Decodable {
 enum UpdateChecker {
     /// 本版的对外版本号（下载页/version.json 里 editor 那节的号）。
     /// 发新版时这里和 version.json 一起 +0.1，不然新版装上还会弹“有新版本”。
-    static let localTag = "V1.5"
-    static let localNumber = 1.5
+    static let localTag = "V1.6"
+    static let localNumber = 1.6
 
     /// 下载页上的 version.json 地址。
-    static let versionURL = URL(string: "https://zylovehh.github.io/wallive-clone/version.json")!
+    static let versionURL = URL(string: "https://zylovehh.github.io/win97/version.json")!
     /// 点“去下载”跳去的下载页。
-    static let downloadPageURL = URL(string: "https://zytendies.cc.cd/")!
+    static let downloadPageURL = URL(string: "https://zylovehh.github.io/win97/")!
 
     /// 拉 version.json，比版本号。有新版就回传远端信息，没有新版回传 nil。
     /// 拉不到（没网、文件没了）就当没新版，不报错、不打扰。
