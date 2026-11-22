@@ -138,15 +138,12 @@ struct WebView: UIViewRepresentable {
                 .store(in: &cancellables)
         }
 
-        // 收到分享文件：回到项目页再导入。项目页的 useEffect 会定义
-        // window.__nativeImportTendies；如果已经在项目页，重载一次也无害
-        // （只是重新渲染项目列表，编辑器会自动保存，不丢数据）。
+        // 收到分享文件：直接发给当前页。单文件 index.html 已定义
+        // window.__nativeImportTendies 桥，不用再跳去 projects.html——
+        // 包里根本没有 projects.html，跳过去会 404、didFinish 不触发，
+        // 分享就一直没反应。桥没好时 deliverPendingImport 自己会重试。
         private func requestDeliverPendingImport() {
-            guard let hostWebView = hostWebView else { return }
-            if let url = URL(string: "cap://app/projects.html") {
-                hostWebView.load(URLRequest(url: url))
-            }
-            // 真正的发送在 webView(_:didFinish:) 里做（页面加载完才有桥）。
+            deliverPendingImport()
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
